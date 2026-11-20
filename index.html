@@ -1,0 +1,1122 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Room Checkout Log</title><meta name="theme-color" content="#0D6A60"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="Checkout Log"><meta name="apple-mobile-web-app-status-bar-style" content="default"><link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon.png"><link rel="icon" href="icon-192.png"><style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px system-ui,sans-serif}img{max-width:100%}[hidden]{display:none!important}</style></head><body><script>window.__HOSTED__=true;</script><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap">
+<style id="hlog-css">
+/* Layout: one column phone app. Sticky title bar, scrolling content, fixed bottom nav; inspection screens swap the nav for an action bar. */
+:root{
+  --bg:#F1F4F3; --surface:#FFFFFF; --surface2:#E7ECEA; --ink:#12201D; --muted:#566663; --line:#D3DBD8;
+  --accent:#0D6A60; --accent-ink:#FFFFFF;
+  --await:#5B6967; --await-bg:#E4EAE8;
+  --defect:#B3362E; --defect-bg:#F8E3E0;
+  --rework:#94600F; --rework-bg:#F6EAD0;
+  --reinsp:#245F97; --reinsp-bg:#DDEAF5;
+  --ok:#26704A; --ok-bg:#DAEFE2;
+  --occ:#5B3FA0; --occ-bg:#E9E2F7;
+  --font-body:'Inter',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
+  --font-head:'Space Grotesk','Inter',system-ui,sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0E1614; --surface:#172220; --surface2:#1F2D2A; --ink:#E7EFEC; --muted:#9AADA8; --line:#2B3C38;
+  --accent:#4CC4B6; --accent-ink:#04201C;
+  --await:#A8B6B2; --await-bg:#22302D; --defect:#FF8F85; --defect-bg:#3B201E;
+  --rework:#F0B85C; --rework-bg:#3A2F16; --reinsp:#7FB8EF; --reinsp-bg:#1B2F43; --ok:#70D69B; --ok-bg:#173324; --occ:#BBA6F2; --occ-bg:#2B2243;
+  color-scheme:dark;}}
+:root[data-theme="dark"]{
+  --bg:#0E1614; --surface:#172220; --surface2:#1F2D2A; --ink:#E7EFEC; --muted:#9AADA8; --line:#2B3C38;
+  --accent:#4CC4B6; --accent-ink:#04201C;
+  --await:#A8B6B2; --await-bg:#22302D; --defect:#FF8F85; --defect-bg:#3B201E;
+  --rework:#F0B85C; --rework-bg:#3A2F16; --reinsp:#7FB8EF; --reinsp-bg:#1B2F43; --ok:#70D69B; --ok-bg:#173324; --occ:#BBA6F2; --occ-bg:#2B2243;
+  color-scheme:dark;}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--font-body);font-size:15px;line-height:1.45;
+  padding-block:0 96px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));-webkit-tap-highlight-color:transparent}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);background:var(--bg);z-index:30}
+button{font:inherit;color:inherit;cursor:pointer;border:0;background:none;padding:0}
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+h1,h2,h3{font-family:var(--font-head);margin:0;text-wrap:balance}
+p{margin:0}
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--bg);display:flex;align-items:center;gap:10px;padding-block:12px 10px}
+.top h1{font-size:22px;font-weight:700;letter-spacing:-.01em}
+.top p{color:var(--muted);font-size:13px}
+.ttl{min-width:0;flex:1}
+.iconbtn{width:44px;height:44px;border-radius:12px;display:grid;place-items:center;background:var(--surface);border:1px solid var(--line)}
+.iconbtn svg,.nav svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.stack{display:flex;flex-direction:column;gap:14px;min-width:0}
+.nav{position:fixed;left:0;right:0;bottom:0;z-index:25;display:grid;grid-template-columns:repeat(4,1fr);background:var(--surface);border-top:1px solid var(--line);
+  padding:6px max(8px,env(safe-area-inset-right,0px)) calc(6px + env(safe-area-inset-bottom,0px)) max(8px,env(safe-area-inset-left,0px))}
+.nav button{position:relative;display:flex;flex-direction:column;align-items:center;gap:2px;min-height:52px;justify-content:center;font-size:11.5px;font-weight:500;color:var(--muted);border-radius:12px}
+.nav button.on{color:var(--accent)}
+.badge{position:absolute;top:2px;left:calc(50% + 6px);background:var(--defect);color:#fff;border-radius:99px;font-size:10.5px;padding:0 6px;min-width:18px;line-height:18px;text-align:center}
+.bar{position:fixed;left:0;right:0;bottom:0;z-index:25;display:flex;gap:10px;background:var(--surface);border-top:1px solid var(--line);
+  padding:10px max(16px,env(safe-area-inset-right,0px)) calc(10px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
+.btn{min-height:48px;padding:0 16px;border-radius:12px;font-weight:600;background:var(--surface);border:1px solid var(--line);display:inline-flex;align-items:center;justify-content:center;gap:8px;text-decoration:none;color:var(--ink);text-align:center}
+.btn.pri{background:var(--accent);color:var(--accent-ink);border-color:transparent}
+.btn.danger{color:var(--defect)}
+.btn[disabled]{opacity:.45;cursor:not-allowed}
+.bar .btn{flex:1}
+.mini{min-height:34px;padding:0 12px;border-radius:9px;font-size:13px;font-weight:600;background:var(--surface2);color:var(--ink)}
+.link{color:var(--accent);font-weight:600;text-decoration:underline;text-underline-offset:2px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px;min-width:0}
+.card h3{font-size:16px}
+.muted{color:var(--muted)}
+.small{font-size:13px}
+.banner{background:var(--rework-bg);color:var(--ink);border:1px solid var(--line);border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:8px}
+.banner.info{background:var(--reinsp-bg)}
+.banner.bad{background:var(--defect-bg)}
+.banner .acts{display:flex;gap:8px;flex-wrap:wrap}
+.strip{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.strip button{border-radius:12px;padding:6px 8px;min-height:48px;text-align:left;border:2px solid transparent;display:flex;flex-direction:row;align-items:center;gap:8px}
+.strip b{font-family:var(--font-head);font-size:22px;line-height:1.1;font-variant-numeric:tabular-nums}
+.strip span{font-size:12.5px;font-weight:600;line-height:1.2}
+.strip button.sel{border-color:var(--ink)}
+.chips{display:flex;gap:8px;overflow-x:auto;padding-bottom:2px}
+.chip{flex:none;min-height:38px;padding:0 14px;border-radius:99px;background:var(--surface);border:1px solid var(--line);font-size:13.5px;font-weight:500;white-space:nowrap}
+.chip.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.blk h2{font-size:18px;display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-bottom:6px}
+.blk h2 small{font-family:var(--font-body);font-size:12.5px;color:var(--muted);font-weight:400}
+.floor{display:grid;grid-template-columns:62px 1fr;gap:8px;align-items:start;margin-top:8px}
+.floor>span{font-size:12px;color:var(--muted);padding-top:12px;font-weight:500}
+.tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(76px,1fr));gap:8px}
+.tile{position:relative;border-radius:12px;min-height:66px;padding:8px 6px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;border:1px solid var(--line)}
+.tile b{font-family:var(--font-head);font-size:20px;line-height:1.1}
+.tile span{font-size:10.5px;font-weight:500;text-align:center}
+.tile i{position:absolute;top:-6px;right:-4px;background:var(--defect);color:#fff;font-style:normal;font-size:11px;min-width:20px;line-height:20px;border-radius:99px;text-align:center;padding:0 4px}
+.st-idle{background:var(--surface);color:var(--muted)}
+.st-awaiting{background:var(--await-bg);color:var(--await)}
+.st-defects{background:var(--defect-bg);color:var(--defect)}
+.st-rework{background:var(--rework-bg);color:var(--rework)}
+.st-reinspect{background:var(--reinsp-bg);color:var(--reinsp)}
+.st-approved{background:var(--ok-bg);color:var(--ok)}
+.st-occupied{background:var(--occ-bg);color:var(--occ)}
+.stb{box-shadow:inset 0 4px 0 var(--c,var(--line))}
+.stb-occupied{--c:var(--occ)}.stb-awaiting{--c:var(--await)}.stb-defects{--c:var(--defect)}.stb-rework{--c:var(--rework)}.stb-reinspect{--c:var(--reinsp)}.stb-approved{--c:var(--ok)}
+.tile.st-idle b{color:var(--ink)}
+.pill{display:inline-block;border-radius:99px;padding:2px 10px;font-size:12px;font-weight:600;white-space:nowrap}
+.sec{display:flex;flex-direction:column}
+.sech{display:flex;align-items:center;gap:10px;padding:10px 0 6px;position:sticky;top:calc(env(safe-area-inset-top,0px) + 66px);background:var(--bg);z-index:5}
+.sech h3{font-size:14px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);flex:1}
+.sech span{font-size:12.5px;color:var(--muted);font-variant-numeric:tabular-nums}
+.row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:8px 8px 8px 12px;margin-bottom:6px;border-left-width:5px}
+.row.ovr{border-left-color:var(--occ)}.row.stk{grid-template-columns:minmax(0,1fr)}
+.row.pass{border-left-color:var(--ok)}.row.fail{border-left-color:var(--defect)}.row.na{border-left-color:var(--await);opacity:.7}.row.fix{border-left-color:var(--rework)}
+.row .lbl{text-align:left;min-height:44px;display:flex;flex-direction:column;justify-content:center;gap:2px;min-width:0;overflow-wrap:anywhere}
+.row .lbl small{color:var(--muted);font-size:12px}
+.row .lbl small.bad{color:var(--defect)}
+.ctl{display:flex;gap:6px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
+.b{min-height:44px;min-width:56px;padding:0 10px;border-radius:10px;font-size:13.5px;font-weight:600;background:var(--surface2);color:var(--muted)}
+.b.p.on{background:var(--ok);color:#fff}.b.f.on{background:var(--defect);color:#fff}.b.n.on{background:var(--await);color:#fff}
+.b.n{min-width:44px;font-weight:500}
+.b.o{min-width:44px;font-weight:600;color:var(--occ)}
+.step{display:flex;align-items:center;gap:6px}
+.step button{width:44px;height:44px;border-radius:10px;background:var(--surface2);font-size:22px;font-weight:600}
+.step .num{min-width:30px;text-align:center;font-family:var(--font-head);font-size:20px;font-weight:600;font-variant-numeric:tabular-nums}
+.step.sm button{width:34px;height:34px;font-size:18px}.step.sm .num{font-size:16px}
+.defect{display:flex;flex-direction:column;gap:8px}
+.defect .dh{display:flex;justify-content:space-between;gap:8px;align-items:flex-start}
+.defect .dh b{font-size:15.5px}
+.defect img{width:84px;height:84px;object-fit:cover;border-radius:10px;border:1px solid var(--line)}
+.defect .acts{display:flex;gap:8px;flex-wrap:wrap}
+.kv{display:grid;grid-template-columns:repeat(auto-fit,minmax(88px,1fr));gap:8px}
+.kv div{background:var(--surface2);border-radius:10px;padding:8px 10px;min-width:0}
+.kv b{display:block;font-family:var(--font-head);font-size:20px;font-variant-numeric:tabular-nums}
+.kv span{font-size:12px;color:var(--muted)}
+.prog{height:6px;border-radius:9px;background:var(--surface2);overflow:hidden}
+.prog i{display:block;height:100%;background:var(--accent)}
+label.f{display:flex;flex-direction:column;gap:5px;font-size:13px;color:var(--muted);font-weight:500}
+input[type=text],input[type=number],input[type=tel],input[type=time],select,textarea{width:100%;min-height:46px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font:inherit;padding:8px 12px}
+textarea{resize:vertical;min-height:84px}
+input[type=checkbox]{width:22px;height:22px;accent-color:var(--accent)}
+.chk{display:flex;align-items:center;gap:10px;min-height:44px;font-size:14.5px;color:var(--ink)}
+.seg{display:flex;gap:6px}.seg .chip{flex:1}
+.scrim{position:fixed;inset:0;background:rgba(5,12,10,.5);z-index:40}
+.sheet{position:fixed;left:0;right:0;bottom:0;z-index:41;max-height:88%;overflow:auto;background:var(--bg);border-radius:18px 18px 0 0;
+  padding:16px max(16px,env(safe-area-inset-right,0px)) calc(16px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));display:flex;flex-direction:column;gap:12px;border-top:1px solid var(--line)}
+.sheet h2{font-size:19px}
+.sheet .acts{display:flex;gap:8px;flex-wrap:wrap}.sheet .acts .btn{flex:1}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(86px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:12px;z-index:60;max-width:90%;font-size:14px}
+.list{display:flex;flex-direction:column}
+.rowl{display:flex;align-items:center;gap:10px;min-height:52px;padding:6px 0;border-top:1px solid var(--line);min-width:0}
+.rowl:first-child{border-top:0}
+.rowl .grow{flex:1;min-width:0;overflow-wrap:anywhere}
+.rowl select{width:auto;max-width:48%;min-height:40px}
+.rowl.wr{flex-wrap:wrap}.rowl.wr select{width:100%;max-width:100%;order:9}.rowl.wr input[type=text]{flex:1 1 100%;min-height:40px}
+.chips.wrap{flex-wrap:wrap;overflow:visible}
+.fl{display:flex;flex-direction:column;gap:6px;font-size:13px;color:var(--muted);font-weight:500}
+.rowl input[type=number]{width:70px;min-height:40px}
+.tag{font-size:11px;font-weight:600;padding:1px 8px;border-radius:99px;background:var(--surface2);color:var(--muted)}
+.tag.off{background:var(--defect-bg);color:var(--defect)}
+.hist{font-size:13px;color:var(--muted);display:flex;flex-direction:column;gap:4px}
+details>summary{cursor:pointer;font-weight:600;min-height:44px;display:flex;align-items:center}
+textarea.wa{min-height:200px;font-size:14px}
+.empty{text-align:center;color:var(--muted);padding:28px 12px}
+@media (prefers-reduced-motion:no-preference){.sheet{animation:up .18s ease-out}@keyframes up{from{transform:translateY(24px);opacity:.4}}}
+</style>
+<div id="app"></div>
+<script id="hlog-src">
+(function(){
+'use strict';
+var EMB=window.__HLOG__||null,STANDALONE=!!EMB,HOSTED=!!window.__HOSTED__;
+var app=document.getElementById('app');
+var esc=function(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});};
+var uid=function(){return Math.random().toString(36).slice(2,9)+Date.now().toString(36).slice(-3);};
+var KEY='hlog.v1',PKEY='hlog.photos.v1';
+var STATUS={occupied:'Occupied (checked in)',awaiting:'Awaiting inspection',defects:'Defects found',rework:'Rework in progress',reinspect:'Ready for re-inspection',approved:'Approved'};
+var SHORT={occupied:'Occupied',awaiting:'Awaiting',defects:'Defects',rework:'Rework',reinspect:'Re-inspect',approved:'Approved',idle:'Vacant'};
+var state=null,photos={},memOnly=false,saveErr=false,toastT=null,lastSheet=null;
+var ui={view:'board',iid:null,from:'board',sub:null,fBlock:'all',fStatus:'all',repTab:'sum',repRange:'today',repRoom:'',sheet:null,toast:null,cat:null};
+var A={},M={},C={};
+
+/* ---------- seed + storage ---------- */
+function seedState(){
+  var o=0,tpl=[],cart=[];
+  function add(section,label,type,x){o++;tpl.push(Object.assign({id:'t'+o,section:section,label:label,type:type||'check',required:true,active:true},x||{}));}
+  ['Broom','Wiper','Toilet brush','Harpic','Colin','Mini wiper','Pocha (dusting and wiping cloth)'].forEach(function(l,k){cart.push({id:'k'+(k+1),label:l,active:true});});
+  add('Room','Food trays cleared');
+  add('Room','Bedcover changed','swap');
+  add('Room','Pillow cases changed','swap');
+  add('Room','Blanket cover changed','swap');
+  add('Room','Bedsheet changed','swap');
+  add('Room','Cushions set');
+  add('Room','Sofa clean');
+  add('Room','Runner set');
+  add('Room','Towels changed','swap');
+  add('Room','Bathrobes changed','swap');
+  add('Room','Ashtray cleared');
+  add('Room','Dustbin cleared');
+  add('Room','Dusting and wiping done (pocha)');
+  add('Tea set','Kettle (1)');add('Tea set','Cups (2)');add('Tea set','Glass (1)');
+  add('Tea set','Napkin present');add('Tea set','Tea bags present');
+  add('Tea set','Sugar sachets','count',{unit:'sachets'});
+  ['Mirror clean','Glass clean','Toilet clean','Sink clean','Floor wiped','Drain cleared','Soap dispenser filled','Shower gel dispenser filled','Bathroom window dusted'].forEach(function(l){add('Toilet',l);});
+  function mk(b,floor,nums){return nums.map(function(n){return {id:b+':'+n,number:String(n),floor:floor,catId:null,active:true,extra:[],off:[]};});}
+  var r=function(a,b){var x=[];for(var i=a;i<=b;i++)x.push(i);return x;};
+  return {v:2,
+    settings:{phone:'',lastBackup:null,catDismissed:false,reportUrl:'',reportKey:'',shiftEnd:''},
+    blocks:[
+      {id:'nn',name:'New Naina',extra:[],off:[],rooms:mk('nn',-1,r(201,203)).concat(mk('nn',0,r(204,209)))},
+      {id:'na',name:'Naina',extra:[],off:[],rooms:mk('na',1,r(101,104)).concat(mk('na',2,r(201,204)),mk('na',3,r(301,304)),mk('na',4,r(401,404)))},
+      {id:'mb',name:'Mt. Manali & BentenWood',extra:[],off:[],rooms:mk('mb',null,r(504,512))}
+    ],
+    categories:[{id:'ca',name:'Category A',na:[],extra:[]},{id:'cb',name:'Category B',na:[],extra:[]}],
+    cart:cart,template:tpl,staff:[],inspections:[]};
+}
+/* Brings older saved data (v1) up to the current shape. Safe to run on current data. */
+function normalize(s){
+  if(!s)return s;
+  s.template=s.template||[];s.categories=s.categories||[];s.staff=s.staff||[];s.inspections=s.inspections||[];s.settings=s.settings||{};
+  if((s.v||1)<2){
+    if(!s.cart){
+      s.cart=[];var keep=[];
+      s.template.forEach(function(x){if(x.section==='HK cart ready')s.cart.push({id:x.id,label:x.label,active:x.active!==false});else keep.push(x);});
+      s.template=keep;
+      s.cart.push({id:'k'+uid(),label:'Pocha (dusting and wiping cloth)',active:true});
+    }
+    var addRoom=function(label){
+      if(s.template.some(function(x){return x.label===label;}))return;
+      var idx=-1;s.template.forEach(function(x,k){if(x.section==='Room')idx=k;});
+      s.template.splice(idx+1,0,{id:'t'+uid(),section:'Room',label:label,type:'check',required:true,active:true});
+    };
+    addRoom('Sofa clean');addRoom('Dusting and wiping done (pocha)');
+  }
+  s.cart=s.cart||[];
+  s.template.forEach(function(x){delete x.min;delete x.max;});
+  s.categories.forEach(function(c){c.na=c.na||[];c.extra=c.extra||[];c.extra.forEach(function(x){delete x.min;delete x.max;});});
+  s.blocks.forEach(function(b){b.extra=b.extra||[];b.off=b.off||[];b.rooms.forEach(function(r){r.extra=r.extra||[];r.off=r.off||[];});});
+  s.inspections.forEach(function(i){
+    if(!i.cleaners)i.cleaners=i.cleaner?[i.cleaner]:[];
+    if(i.outAt===undefined)i.outAt=i.status==='occupied'?null:i.createdAt;
+    if(i.inAt===undefined)i.inAt=null;
+    if(i.guest==null)i.guest='';
+    (i.items||[]).forEach(function(x){delete x.min;delete x.max;});
+    Object.keys(i.res||{}).forEach(function(k){var r=i.res[k];if(!r.staffs&&r.staff!==undefined)r.staffs=r.staff?[r.staff]:[];});
+  });
+  var st=s.settings;if(st.reportUrl==null)st.reportUrl='';if(st.reportKey==null)st.reportKey='';if(st.shiftEnd==null)st.shiftEnd='';
+  s.v=2;return s;
+}
+function loadAll(){
+  try{
+    var r=localStorage.getItem(KEY);
+    if(r){var d=JSON.parse(r);if(d&&d.blocks)state=normalize(d);}
+    var p=localStorage.getItem(PKEY);if(p)photos=JSON.parse(p)||{};
+    localStorage.setItem('hlog.probe','1');localStorage.removeItem('hlog.probe');
+  }catch(e){memOnly=true;}
+  if(EMB&&EMB.state&&EMB.state.blocks){
+    if(!state){state=normalize(EMB.state);photos=EMB.photos||{};save();savePhotos();}
+    else if((state.modifiedAt||0)<(EMB.exportedAt||0)){ui.pendingImport={state:EMB.state,photos:EMB.photos||{}};ui.sheet={type:'importc',when:EMB.exportedAt,file:true};}
+  }
+  if(!state)state=seedState();
+}
+function save(){
+  if(state)state.modifiedAt=Date.now();
+  if(memOnly)return false;
+  try{localStorage.setItem(KEY,JSON.stringify(state));saveErr=false;return true;}catch(e){saveErr=true;return false;}
+}
+function savePhotos(){try{localStorage.setItem(PKEY,JSON.stringify(photos));return true;}catch(e){toast('Storage is full. The photo was not kept.');return false;}}
+
+/* ---------- helpers ---------- */
+var DAY=864e5;
+function isToday(ts){if(!ts)return false;var a=new Date(ts),b=new Date();return a.getFullYear()===b.getFullYear()&&a.getMonth()===b.getMonth()&&a.getDate()===b.getDate();}
+function fmtDT(ts){return new Date(ts).toLocaleString('en-IN',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit',hour12:false});}
+function fmtT(ts){return new Date(ts).toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit',hour12:false});}
+function ago(ts){var m=Math.max(0,Math.round((Date.now()-ts)/6e4));if(m<60)return m+'m';var h=Math.round(m/60);if(h<48)return h+'h';return Math.round(h/24)+'d';}
+function fmtDur(ms){if(ms==null)return '–';var m=Math.round(ms/6e4);if(m<60)return m+' min';var h=Math.floor(m/60);return h+'h '+(m%60)+'m';}
+function floorLabel(f){return f==null?'Floor not set':'Floor '+f;}
+function roomInfo(id){for(var b=0;b<state.blocks.length;b++){var rs=state.blocks[b].rooms;for(var k=0;k<rs.length;k++)if(rs[k].id===id)return {room:rs[k],block:state.blocks[b]};}return null;}
+function roomTag(i){var x=roomInfo(i.roomId);return x?x.room.number+' ('+x.block.name+')':'?';}
+function roomHead(i){var x=roomInfo(i.roomId);if(!x)return 'Room';return 'Room '+x.room.number+' ('+x.block.name+(x.room.floor!=null?', Floor '+x.room.floor:'')+')';}
+function staffName(id){var s=state.staff.filter(function(x){return x.id===id;})[0];return s?s.name:'';}
+function names(ids){return (ids||[]).map(staffName).filter(Boolean).join(', ');}
+function cl(i){return i.cleaners||[];}
+function insp(id){return state.inspections.filter(function(x){return x.id===id;})[0];}
+function itemOf(i,id){return i.items.filter(function(x){return x.id===id;})[0];}
+function failsAll(i){return i.items.filter(function(it){return i.res[it.id]&&i.res[it.id].r==='fail';});}
+function fails(i){return failsAll(i).filter(function(it){return i.res[it.id].fix!=='overridden';});}
+function overrides(i){return failsAll(i).filter(function(it){return i.res[it.id].fix==='overridden';});}
+function dstaff(i,r){return names(r.staffs&&r.staffs.length?r.staffs:cl(i));}
+function outT(i){return i.outAt||i.createdAt;}
+function latestFor(rid){var b=null;state.inspections.forEach(function(i){if(i.roomId===rid&&(!b||i.createdAt>b.createdAt))b=i;});return b;}
+function currentFor(rid){var i=latestFor(rid);if(!i)return null;if(i.status!=='approved')return i;return isToday(i.approvedAt)?i:null;}
+function statusOf(rid){var c=currentFor(rid);return c?c.status:'idle';}
+function reworkRounds(i){return i.firstPass?0:i.round;}
+function blockOf(id){return state.blocks.filter(function(b){return b.id===id;})[0];}
+function catOf(room){return state.categories.filter(function(c){return c.id===room.catId;})[0];}
+/* Every item a room could have, before per-room or per-block removals: standard + category + block + this room. */
+function candidates(room,block){
+  var cat=room?catOf(room):null,na=(cat&&cat.na)||[],out=[];
+  state.template.forEach(function(x){if(x.active!==false&&(room?na.indexOf(x.id)<0:true))out.push({t:x,src:'std'});});
+  if(cat)(cat.extra||[]).forEach(function(x){if(x.active!==false)out.push({t:x,src:'cat'});});
+  (block.extra||[]).forEach(function(x){if(x.active!==false)out.push({t:x,src:'block'});});
+  if(room)(room.extra||[]).forEach(function(x){if(x.active!==false)out.push({t:x,src:'room'});});
+  return out;
+}
+function itemsFor(room,block){
+  var off=(block.off||[]).concat(room.off||[]);
+  var cart=(state.cart||[]).filter(function(k){return k.active!==false;}).map(function(k){return {id:k.id,label:k.label,section:'HK cart ready',type:'check',required:false,active:true};});
+  return cart.concat(candidates(room,block).filter(function(c){return off.indexOf(c.t.id)<0;}).map(function(c){return Object.assign({},c.t);}));
+}
+function resync(i){
+  if(i.status!=='occupied'&&i.status!=='awaiting')return;
+  var x=roomInfo(i.roomId);if(!x)return;
+  i.items=itemsFor(x.room,x.block);
+  var ids={};i.items.forEach(function(it){ids[it.id]=1;});
+  Object.keys(i.res).forEach(function(k){if(!ids[k])delete i.res[k];});
+}
+function resyncAll(){state.inspections.forEach(resync);}
+function newInsp(roomId,demo,ageMin,occ){
+  var x=roomInfo(roomId),tm=Date.now()-(ageMin||0)*6e4;
+  var i={id:uid(),roomId:roomId,createdAt:tm,status:occ?'occupied':'awaiting',round:1,cleaners:[],items:itemsFor(x.room,x.block),res:{},log:[],firstPass:null,approvedAt:null,full:false,demo:!!demo,inAt:occ?tm:null,outAt:occ?null:tm,guest:''};
+  i.log.push({t:tm,e:occ?'Guest checked in':'Checked out, awaiting inspection'});
+  state.inspections.push(i);return i;
+}
+function inScope(i,it){if(i.status!=='reinspect'||i.full)return true;var r=i.res[it.id];return !!(r&&r.fix);}
+function pending(i){
+  return i.items.filter(function(it){
+    if(!inScope(i,it))return false;
+    var r=i.res[it.id]||{};
+    if(i.status==='reinspect'){
+      if(r.r==='fail'&&r.fix==='fixed')return true;
+      if(!r.r&&it.required!==false&&i.full)return true;
+      return false;
+    }
+    return !r.r&&it.required!==false;
+  });
+}
+function toast(msg){ui.toast=msg;clearTimeout(toastT);toastT=setTimeout(function(){ui.toast=null;render();},2600);render();}
+
+/* ---------- WhatsApp text ---------- */
+function waDefects(i){
+  var f=fails(i);
+  var staff=[];f.forEach(function(it){var r=i.res[it.id];(r.staffs&&r.staffs.length?r.staffs:cl(i)).forEach(function(id){var n=staffName(id);if(n&&staff.indexOf(n)<0)staff.push(n);});});
+  var lines=f.map(function(it){var r=i.res[it.id];var n=(r.note||r.auto||'').trim();return '- '+it.label+(n?': '+n:'')+(r.sev==='urgent'?' (URGENT)':'');});
+  return roomHead(i)+': DEFECTS FOUND\n'+(i.round>1?'Re-inspection round '+(i.round)+'\n':'')+lines.join('\n')+(staff.length?'\nAssigned: '+staff.join(', '):'')+'\nStatus: Rework in progress. Will update when approved.';
+}
+function waReady(i){
+  var ov=overrides(i);
+  return roomHead(i)+': READY\nApproved '+fmtT(i.approvedAt)+'. '+(i.firstPass?'Passed first time.':'Passed after '+i.round+' rework round'+(i.round>1?'s':'')+'.')+(ov.length?'\nAccepted as is: '+ov.map(function(it){var n=i.res[it.id].ovr;return it.label+(n&&n!=='Overridden by POC'?' ('+n+')':'');}).join(', '):'');
+}
+function waDaily(){
+  var d=new Date().toLocaleDateString('en-IN',{day:'numeric',month:'short'});
+  var ap=state.inspections.filter(function(i){return i.status==='approved'&&isToday(i.approvedAt);});
+  var oc=state.inspections.filter(function(i){return i.status==='occupied';});
+  var pe=state.inspections.filter(function(i){return i.status!=='approved'&&i.status!=='occupied';});
+  var t='Housekeeping update, '+d+'\nApproved today ('+ap.length+'): '+(ap.map(roomTag).join(', ')||'none')+'\nOccupied ('+oc.length+'): '+(oc.map(roomTag).join(', ')||'none')+'\nPending ('+pe.length+'):';
+  pe.forEach(function(i){var n=fails(i).length;t+='\n- Room '+roomTag(i)+': '+STATUS[i.status]+(n&&i.status!=='awaiting'?', '+n+' open':'');});
+  if(!pe.length)t+=' none';
+  return t;
+}
+function openWA(kind,i){
+  var text=kind==='defects'?waDefects(i):kind==='ready'?waReady(i):waDaily();
+  ui.sheet={type:'wa',kind:kind,text:text,iid:i?i.id:null};render();
+}
+
+/* ---------- daily report ---------- */
+function dkey(ts){var d=new Date(ts);return d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2);}
+function submittedToday(){var l=state.settings.lastSubmit;return !!(l&&l.date===dkey(Date.now()));}
+function buildReport(){
+  var today=dkey(Date.now()),rows=[];
+  state.inspections.forEach(function(i){
+    if(i.demo)return;
+    var carry=i.status!=='approved'&&i.status!=='occupied';
+    var rel=[i.inAt,i.outAt,i.approvedAt].some(function(ts){return ts&&isToday(ts);});
+    if(!rel&&!carry)return;
+    var x=roomInfo(i.roomId)||{room:{number:'?'},block:{name:'?'}};
+    var f=failsAll(i),started=i.status!=='awaiting'&&i.status!=='occupied';
+    rows.push({ref:i.id,date:dkey(i.outAt||i.inAt||i.createdAt),block:x.block.name,room:x.room.number,floor:x.room.floor==null?'':x.room.floor,status:STATUS[i.status],checkedIn:i.inAt?fmtT(i.inAt):'',checkedOut:i.outAt?fmtT(i.outAt):'',approved:i.approvedAt?fmtT(i.approvedAt):'',cleanedBy:names(cl(i)),firstPass:i.firstPass==null?'':(i.firstPass?'Yes':'No'),reworkRounds:i.firstPass==null?'':reworkRounds(i),openDefects:started?fails(i).length:0,defects:f.map(function(it){var r=i.res[it.id],n=(r.note||r.auto||'').trim();return it.label+(n?' ('+n+')':'');}).join('; '),overridden:overrides(i).map(function(it){var r=i.res[it.id];return it.label+(r.ovr?' ('+r.ovr+')':'');}).join('; ')});
+  });
+  var real=state.inspections.filter(function(i){return !i.demo;});
+  var outToday=real.filter(function(i){return i.outAt&&isToday(i.outAt)&&i.status!=='occupied';});
+  var fin=outToday.filter(function(i){return i.firstPass!=null;});
+  var ovn=0;real.forEach(function(i){if(i.approvedAt&&isToday(i.approvedAt)||(i.outAt&&isToday(i.outAt)))ovn+=overrides(i).length;});
+  var summary={date:today,checkIns:real.filter(function(i){return i.inAt&&isToday(i.inAt);}).length,inspected:outToday.length,approved:real.filter(function(i){return i.status==='approved'&&i.approvedAt&&isToday(i.approvedAt);}).length,firstPassPct:fin.length?Math.round(100*fin.filter(function(i){return i.firstPass;}).length/fin.length):'',openDefects:real.reduce(function(a,i){return a+((i.status==='awaiting'||i.status==='occupied'||i.status==='approved')?0:fails(i).length);},0),overridden:ovn,occupiedNow:real.filter(function(i){return i.status==='occupied';}).length,pendingRooms:real.filter(function(i){return i.status!=='approved'&&i.status!=='occupied';}).length};
+  return {date:today,summary:summary,rooms:rows};
+}
+var RCOLS=[['Ref','ref'],['Date','date'],['Block','block'],['Room','room'],['Floor','floor'],['Status','status'],['Checked in','checkedIn'],['Checked out','checkedOut'],['Approved','approved'],['Cleaned by','cleanedBy'],['First-time pass','firstPass'],['Rework rounds','reworkRounds'],['Open defects','openDefects'],['Defects','defects'],['Overridden','overridden']];
+function reportTSV(rp){
+  var cell=function(v){return String(v==null?'':v).replace(/[\t\r\n]+/g,' ');};
+  var s=rp.summary;
+  return ['Daily summary '+rp.date,'Check-ins\t'+s.checkIns,'Rooms inspected\t'+s.inspected,'Approved\t'+s.approved,'First-time pass %\t'+s.firstPassPct,'Open defects\t'+s.openDefects,'Overridden\t'+s.overridden,'Occupied now\t'+s.occupiedNow,'',RCOLS.map(function(c){return c[0];}).join('\t')].concat(rp.rooms.map(function(r){return RCOLS.map(function(c){return cell(r[c[1]]);}).join('\t');})).join('\n');
+}
+function markSubmitted(confirmed){state.settings.lastSubmit={at:Date.now(),date:dkey(Date.now()),confirmed:!!confirmed};save();}
+
+/* ---------- files ---------- */
+function csv(rows){return rows.map(function(r){return r.map(function(c){var s=String(c==null?'':c);return /[",\n]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s;}).join(',');}).join('\n');}
+function anchorSave(name,data){
+  var ext=name.split('.').pop(),mime={html:'text/html',json:'application/json',csv:'text/csv'}[ext]||'text/plain';
+  var u=URL.createObjectURL(new Blob([data],{type:mime+';charset=utf-8'}));
+  var a=document.createElement('a');a.href=u;a.download=name;document.body.appendChild(a);a.click();
+  setTimeout(function(){URL.revokeObjectURL(u);a.remove();},4000);
+}
+function saveFile(name,data,opts){
+  opts=opts||{};
+  var p;
+  try{p=(window.claude&&window.claude.use)?window.claude.use('downloads'):Promise.resolve(null);}catch(e){p=Promise.resolve(null);}
+  return p.then(function(d){
+    if(!d){if(!STANDALONE&&!HOSTED)throw {code:'unavailable'};anchorSave(name,data);return;}
+    return d.save({filename:name,data:data});
+  }).then(function(){
+    if(opts.backup){state.settings.lastBackup=Date.now();save();}
+    toast('Saved '+name+(opts.share?'. Attach it in WhatsApp as a document.':''));
+  }).catch(function(e){
+    if(e&&e.code==='declined')return;
+    if(opts.noText){toast('Saving files is not available in this view.');return;}
+    ui.sheet={type:'text',title:name,text:data};render();
+  });
+}
+function buildStandalone(withData){
+  var css=document.getElementById('hlog-css'),src=document.getElementById('hlog-src');
+  if(!css||!src)return null;
+  var st=withData?state:Object.assign({},state,{inspections:[]});
+  var snap={app:'room-checkout-log',v:1,exportedAt:Date.now(),state:st,photos:withData?photos:{}};
+  var json=JSON.stringify(snap).replace(/</g,'\\u003c').replace(new RegExp(String.fromCharCode(8232),'g'),'\\u2028').replace(new RegExp(String.fromCharCode(8233),'g'),'\\u2029');
+  return '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Room Checkout Log</title>'+
+    '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap">'+
+    '<style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px system-ui,sans-serif}img{max-width:100%}[hidden]{display:none!important}</style>'+
+    '<style id="hlog-css">'+css.textContent+'</style></head><body><div id="app"></div><script>window.__HLOG__='+json+';<\/script><script id="hlog-src">'+src.textContent+'<\/script></body></html>';
+}
+function shareFile(withData){
+  var h=buildStandalone(withData);
+  if(!h){toast('Sharing as a file is not available in this view.');return;}
+  saveFile('room-checkout-log-'+new Date().toISOString().slice(0,10)+(withData?'':'-setup')+'.html',h,{share:true,noText:true,backup:withData});
+}
+function exportInsp(){
+  var iso=function(v){return v?new Date(v).toISOString():'';};
+  var rows=[['Room','Block','Floor','Status','Cleaned by','Checked in','Checked out','Approved','First-time pass','Rework rounds','Open defects','Overridden defects','Guest note']];
+  state.inspections.forEach(function(i){var x=roomInfo(i.roomId)||{room:{},block:{}};rows.push([x.room.number,x.block.name,x.room.floor==null?'':x.room.floor,STATUS[i.status],names(cl(i)).replace(/, /g,'; '),iso(i.inAt),iso(i.outAt),iso(i.approvedAt),i.firstPass==null?'':(i.firstPass?'yes':'no'),i.firstPass==null?'':reworkRounds(i),(i.status==='awaiting'||i.status==='occupied')?0:fails(i).length,overrides(i).length,i.guest||'']);});
+  saveFile('inspections.csv',csv(rows));
+}
+function exportDef(){
+  var rows=[['Room','Block','Item','Section','Note','Severity','Assigned','Defect status','Override reason','Times failed','Checked out']];
+  state.inspections.forEach(function(i){var x=roomInfo(i.roomId)||{room:{},block:{}};i.items.forEach(function(it){var r=i.res[it.id];if(r&&(r.failCount||r.r==='fail')){rows.push([x.room.number,x.block.name,it.label,it.section,r.note||r.auto||'',r.sev||'normal',dstaff(i,r).replace(/, /g,'; '),r.fix==='overridden'?'overridden':r.r==='fail'?(r.fix==='fixed'?'fixed, awaiting re-inspection':'open'):'verified',r.fix==='overridden'?(r.ovr||''):'',r.failCount||1,new Date(outT(i)).toISOString()]);}});});
+  saveFile('defects.csv',csv(rows));
+}
+function exportJson(){saveFile('room-checkout-backup-'+new Date().toISOString().slice(0,10)+'.json',JSON.stringify({app:'room-checkout-log',v:1,exportedAt:Date.now(),state:state,photos:photos}),{backup:true});}
+function readPhoto(file,cb){
+  var fr=new FileReader();
+  fr.onload=function(){var img=new Image();img.onload=function(){var s=Math.min(1,720/Math.max(img.width,img.height));var c=document.createElement('canvas');c.width=Math.round(img.width*s);c.height=Math.round(img.height*s);c.getContext('2d').drawImage(img,0,0,c.width,c.height);cb(c.toDataURL('image/jpeg',0.6));};img.onerror=function(){toast('That photo could not be read.');};img.src=fr.result;};
+  fr.readAsDataURL(file);
+}
+
+/* ---------- icons ---------- */
+var ICON={
+  back:'<path d="M15 5l-7 7 7 7"/>',
+  grid:'<rect x="4" y="4" width="6.5" height="6.5" rx="1.5"/><rect x="13.5" y="4" width="6.5" height="6.5" rx="1.5"/><rect x="4" y="13.5" width="6.5" height="6.5" rx="1.5"/><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.5"/>',
+  list:'<path d="M8 6h12M8 12h12M8 18h12"/><circle cx="4" cy="6" r="1"/><circle cx="4" cy="12" r="1"/><circle cx="4" cy="18" r="1"/>',
+  chart:'<path d="M5 20V10M12 20V4M19 20v-7"/>',
+  gear:'<circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1"/>',
+  chev:'<path d="M9 5l7 7-7 7"/>'
+};
+function ic(n){return '<svg viewBox="0 0 24 24" aria-hidden="true">'+ICON[n]+'</svg>';}
+function pill(s){return '<span class="pill st-'+s+'">'+esc(STATUS[s]||SHORT[s])+'</span>';}
+function hdr(title,sub,back){return '<header class="top">'+(back?'<button class="iconbtn" data-a="'+back+'" aria-label="Back">'+ic('back')+'</button>':'')+'<div class="ttl"><h1>'+esc(title)+'</h1>'+(sub?'<p>'+esc(sub)+'</p>':'')+'</div></header>';}
+
+/* ---------- views ---------- */
+function vBoard(){
+  var counts={occupied:0,awaiting:0,defects:0,rework:0,reinspect:0,approved:0};
+  state.blocks.forEach(function(b){b.rooms.forEach(function(r){if(r.active===false)return;var s=statusOf(r.id);if(counts[s]!=null)counts[s]++;});});
+  var h=hdr('Rooms',new Date().toLocaleDateString('en-IN',{weekday:'long',day:'numeric',month:'short'}));
+  h+='<div class="stack">';
+  if(memOnly)h+='<div class="banner bad"><b>This browser is not saving data.</b><span class="small">Anything entered is lost when you close the page. Export a backup from Settings before you leave.</span></div>';
+  else if(saveErr)h+='<div class="banner bad"><b>Storage is full.</b><span class="small">Recent changes may not be saved. Export a backup and remove old inspections or photos.</span></div>';
+  var needCat=state.categories.length&&!state.settings.catDismissed&&state.blocks.some(function(b){return b.rooms.some(function(r){return r.active!==false&&!r.catId;});});
+  if(needCat)h+='<div class="banner info"><b>Set up room categories</b><span class="small">Assign categories to rooms and add category-specific items. Until then every room uses the standard checklist.</span><div class="acts"><button class="mini" data-a="gosub" data-v="rooms">Assign rooms</button><button class="mini" data-a="dismisscat">Dismiss</button></div></div>';
+  var se=state.settings.shiftEnd;
+  if(se&&!submittedToday()){var hm=se.split(':'),endAt=new Date();endAt.setHours(+hm[0]||0,+hm[1]||0,0,0);if(Date.now()>=endAt.getTime()-60*6e4&&buildReport().rooms.length)h+='<div class="banner"><b>Submit today\'s report</b><span class="small">Shift ends at '+esc(se)+'. The report has not been sent yet.</span><div class="acts"><button class="mini" data-a="nav" data-v="reports">Open report</button></div></div>';}
+  var hasData=state.inspections.some(function(i){return !i.demo;});
+  var lb=state.settings.lastBackup;
+  if(hasData&&(!lb||Date.now()-lb>7*DAY))h+='<div class="banner"><b>Back up your data</b><span class="small">'+(lb?'Last backup '+ago(lb)+' ago.':'No backup yet.')+' Data lives only on this device.</span><div class="acts"><button class="mini" data-a="expjson">Export backup</button></div></div>';
+  if(state.inspections.some(function(i){return i.demo;}))h+='<div class="banner info"><b>Demo data is loaded</b><span class="small">Marked inspections are examples only.</span><div class="acts"><button class="mini" data-a="rmdemo">Remove demo data</button></div></div>';
+  h+='<div class="strip">';
+  ['occupied','awaiting','defects','rework','reinspect','approved'].forEach(function(s){h+='<button class="st-'+s+(ui.fStatus===s?' sel':'')+'" data-a="fstatus" data-v="'+s+'"><b>'+counts[s]+'</b><span>'+(s==='approved'?'Approved today':SHORT[s])+'</span></button>';});
+  h+='</div>';
+  h+='<div class="chips"><button class="chip'+(ui.fBlock==='all'?' on':'')+'" data-a="fblock" data-v="all">All blocks</button>'+state.blocks.map(function(b){return '<button class="chip'+(ui.fBlock===b.id?' on':'')+'" data-a="fblock" data-v="'+b.id+'">'+esc(b.name)+'</button>';}).join('')+'</div>';
+  if(ui.fStatus!=='all')h+='<p class="small muted">Showing: '+esc(STATUS[ui.fStatus])+' <button class="link" data-a="fstatus" data-v="all">Show all</button></p>';
+  var any=false;
+  state.blocks.forEach(function(b){
+    if(ui.fBlock!=='all'&&ui.fBlock!==b.id)return;
+    var rooms=b.rooms.filter(function(r){return r.active!==false&&(ui.fStatus==='all'||statusOf(r.id)===ui.fStatus);});
+    if(!rooms.length)return;
+    any=true;
+    var fl=[];rooms.forEach(function(r){if(fl.indexOf(r.floor)<0)fl.push(r.floor);});
+    fl.sort(function(a,c){if(a==null)return 1;if(c==null)return -1;return a-c;});
+    h+='<section class="blk"><h2>'+esc(b.name)+'<small>'+rooms.length+' rooms</small></h2>';
+    fl.forEach(function(f){
+      h+='<div class="floor"><span>'+(f==null?'Floor ?':'Floor '+f)+'</span><div class="tiles">';
+      rooms.filter(function(r){return r.floor===f;}).forEach(function(r){
+        var s=statusOf(r.id),c=currentFor(r.id),n=c&&c.status!=='approved'&&c.status!=='awaiting'&&c.status!=='occupied'?fails(c).length:0;
+        h+='<button class="tile st-'+s+'" data-a="room" data-i="'+esc(r.id)+'" aria-label="Room '+esc(r.number)+', '+esc(b.name)+', '+esc(SHORT[s])+'"><b>'+esc(r.number)+'</b><span>'+esc(SHORT[s])+'</span>'+(n?'<i>'+n+'</i>':'')+'</button>';
+      });
+      h+='</div></div>';
+    });
+    h+='</section>';
+  });
+  if(!any)h+='<div class="empty">No rooms match this filter.</div>';
+  return h+'</div>';
+}
+function vQueue(){
+  var list=state.inspections.filter(function(i){return i.status!=='approved'&&i.status!=='occupied';});
+  function urgent(i){return fails(i).some(function(it){return i.res[it.id].sev==='urgent';});}
+  var act=list.filter(function(i){return i.status!=='awaiting';}).sort(function(a,b){return (urgent(b)-urgent(a))||(outT(a)-outT(b));});
+  var aw=list.filter(function(i){return i.status==='awaiting';}).sort(function(a,b){return outT(a)-outT(b);});
+  var h=hdr('Rework queue','Open defects first, urgent on top')+'<div class="stack">';
+  function card(i){
+    var f=fails(i),x=roomInfo(i.roomId)||{room:{},block:{}},can=(i.status==='defects'||i.status==='rework');
+    return '<div class="card stack" style="gap:8px"><button data-a="open" data-i="'+i.id+'" style="text-align:left;display:flex;flex-direction:column;gap:6px;width:100%"><div style="display:flex;justify-content:space-between;gap:8px;align-items:center"><b style="font-family:var(--font-head);font-size:18px">Room '+esc(x.room.number)+' <span class="muted small" style="font-weight:400">'+esc(x.block.name)+'</span></b>'+pill(i.status)+'</div>'+
+      (f.length&&i.status!=='awaiting'?'<span class="small">'+f.length+' open: '+esc(f.slice(0,3).map(function(it){return it.label;}).join(', '))+(f.length>3?'…':'')+'</span>':'')+
+      '<span class="small muted">'+(urgent(i)?'<b style="color:var(--defect)">Urgent</b> · ':'')+'Waiting '+ago(outT(i))+(cl(i).length?' · '+esc(names(cl(i))):'')+(i.round>1?' · round '+i.round:'')+'</span></button>'+
+      (can?'<div style="display:flex;gap:8px;flex-wrap:wrap"><button class="mini" data-a="qfix" data-i="'+i.id+'">'+(f.length?'Fix all and approve':'Approve room')+'</button></div>':'')+'</div>';
+  }
+  if(!act.length&&!aw.length)h+='<div class="empty">Nothing waiting. Start an inspection from the Rooms tab.</div>';
+  act.forEach(function(i){h+=card(i);});
+  if(aw.length){h+='<h3 class="muted small" style="text-transform:uppercase;letter-spacing:.06em">Awaiting inspection</h3>';aw.forEach(function(i){h+=card(i);});}
+  return h+'</div>';
+}
+function rangeStart(){var n=new Date(),t=new Date(n.getFullYear(),n.getMonth(),n.getDate()).getTime();return {today:t,'7d':t-6*DAY,'30d':t-29*DAY,all:0}[ui.repRange];}
+function vReports(){
+  var h=hdr('Reports')+'<div class="stack">';
+  h+='<div class="seg"><button class="chip'+(ui.repTab==='sum'?' on':'')+'" data-a="reptab" data-v="sum">Summary</button><button class="chip'+(ui.repTab==='staff'?' on':'')+'" data-a="reptab" data-v="staff">Staff</button><button class="chip'+(ui.repTab==='rooms'?' on':'')+'" data-a="reptab" data-v="rooms">Room history</button></div>';
+  if(ui.repTab!=='rooms'){
+    h+='<div class="chips">'+[['today','Today'],['7d','7 days'],['30d','30 days'],['all','All time']].map(function(r){return '<button class="chip'+(ui.repRange===r[0]?' on':'')+'" data-a="reprange" data-v="'+r[0]+'">'+r[1]+'</button>';}).join('')+'</div>';
+  }
+  var t0=rangeStart();
+  var list=state.inspections.filter(function(i){return i.createdAt>=t0;});
+  var fin=list.filter(function(i){return i.firstPass!=null;});
+  var appr=list.filter(function(i){return i.status==='approved'&&i.approvedAt;});
+  if(ui.repTab==='sum'){
+    var fpr=fin.length?Math.round(100*fin.filter(function(i){return i.firstPass;}).length/fin.length)+'%':'–';
+    var avg=appr.length?fmtDur(appr.reduce(function(a,i){return a+(i.approvedAt-outT(i));},0)/appr.length):'–';
+    var open=state.inspections.reduce(function(a,i){return a+(i.status==='approved'||i.status==='awaiting'||i.status==='occupied'?0:fails(i).length);},0);
+    var insd=list.filter(function(i){return i.status!=='occupied';}).length,cin=list.filter(function(i){return i.inAt;}).length,ovn=0;list.forEach(function(i){ovn+=overrides(i).length;});
+    h+='<div class="kv"><div><b>'+cin+'</b><span>Check-ins</span></div><div><b>'+insd+'</b><span>Rooms inspected</span></div><div><b>'+appr.length+'</b><span>Approved</span></div><div><b>'+fpr+'</b><span>First-time pass</span></div><div><b>'+open+'</b><span>Open defects now</span></div><div><b>'+ovn+'</b><span>Defects overridden</span></div><div><b>'+avg+'</b><span>Avg. checkout to approval</span></div></div>';
+    var rp=buildReport(),ls=state.settings.lastSubmit;
+    h+='<div class="card stack"><h3>Daily report for the sheet</h3><p class="small muted">'+rp.rooms.length+' room row'+(rp.rooms.length===1?'':'s')+' · '+rp.summary.approved+' approved · '+rp.summary.openDefects+' open defects. Sending again later today updates the same rows, it does not duplicate them.</p><p class="small">'+(submittedToday()?'Submitted today at '+fmtT(ls.at)+(ls.confirmed?'.':' (no confirmation received, check the sheet).'):'Not submitted yet today.')+'</p><button class="btn pri" data-a="submit">Submit to Google Sheet</button><button class="btn" data-a="copyreport">Copy as table</button></div>';
+    h+='<div class="card stack"><h3>Share with reception</h3><button class="btn pri" data-a="daily">Daily summary for WhatsApp</button></div>';
+    h+='<div class="card stack"><h3>Export</h3><div class="acts" style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" style="flex:1" data-a="expinsp">Inspections CSV</button><button class="btn" style="flex:1" data-a="expdef">Defects CSV</button></div></div>';
+  } else if(ui.repTab==='staff'){
+    var rows=state.staff.map(function(s){
+      var mine=list.filter(function(i){return cl(i).indexOf(s.id)>=0;});
+      var done=mine.filter(function(i){return i.firstPass!=null;});
+      var fp=done.filter(function(i){return i.firstPass;}).length;
+      var dcount=0,rep=0;mine.forEach(function(i){i.items.forEach(function(it){var r=i.res[it.id];if(r&&r.failCount){dcount++;if(r.failCount>1)rep++;}});});
+      var ap=mine.filter(function(i){return i.status==='approved'&&i.approvedAt;});
+      return {s:s,rooms:mine.length,done:done.length,fp:fp,rate:done.length?fp/done.length:null,dcount:dcount,rep:rep,rw:ap.length?ap.reduce(function(a,i){return a+reworkRounds(i);},0)/ap.length:null,tt:ap.length?ap.reduce(function(a,i){return a+(i.approvedAt-outT(i));},0)/ap.length:null,nap:ap.length};
+    });
+    var best=null,fast=null;
+    rows.forEach(function(r){if(r.done>=2&&(best==null||r.rate>best.rate||(r.rate===best.rate&&r.done>best.done)))best=r;if(r.nap>=2&&(fast==null||r.tt<fast.tt))fast=r;});
+    if(!state.staff.length)h+='<div class="empty">Add housekeeping staff in Settings, then pick "Cleaned by" on each inspection.</div>';
+    rows.forEach(function(r){
+      h+='<div class="card stack"><div style="display:flex;justify-content:space-between;gap:8px;align-items:center"><h3>'+esc(r.s.name)+'</h3><span>'+(best===r?'<span class="pill st-approved">Top first-time pass</span> ':'')+(fast===r?'<span class="pill st-reinspect">Fastest approval</span>':'')+'</span></div>'+
+        '<div class="kv"><div><b>'+r.rooms+'</b><span>Rooms</span></div><div><b>'+r.fp+'/'+r.done+'</b><span>First-time pass</span></div><div><b>'+r.dcount+'</b><span>Defects</span></div><div><b>'+r.rep+'</b><span>Repeat failures</span></div><div><b>'+(r.rw==null?'–':r.rw.toFixed(1))+'</b><span>Avg. rework rounds</span></div><div><b>'+fmtDur(r.tt)+'</b><span>Avg. to approval</span></div></div></div>';
+    });
+    if(state.staff.length)h+='<p class="small muted">Badges need at least 2 rooms. A room cleaned by two or more people counts for each of them. Raw numbers are shown so small samples are easy to spot.</p>';
+  } else {
+    var all=[];state.blocks.forEach(function(b){b.rooms.forEach(function(r){all.push({id:r.id,label:'Room '+r.number+' · '+b.name});});});
+    if(!ui.repRoom&&all.length)ui.repRoom=all[0].id;
+    h+='<label class="f">Room<select data-c="reproom">'+all.map(function(r){return '<option value="'+esc(r.id)+'"'+(r.id===ui.repRoom?' selected':'')+'>'+esc(r.label)+'</option>';}).join('')+'</select></label>';
+    var hs=state.inspections.filter(function(i){return i.roomId===ui.repRoom;}).sort(function(a,b){return b.createdAt-a.createdAt;});
+    if(!hs.length)h+='<div class="empty">No inspections for this room yet.</div>';
+    hs.forEach(function(i){
+      var f=i.items.filter(function(it){return i.res[it.id]&&i.res[it.id].failCount;});
+      h+='<button class="card" data-a="open" data-i="'+i.id+'" style="text-align:left;display:flex;flex-direction:column;gap:6px"><div style="display:flex;justify-content:space-between;gap:8px;align-items:center"><b>'+fmtDT(i.createdAt)+'</b>'+pill(i.status)+'</div><span class="small muted">'+(i.inAt?'In '+fmtDT(i.inAt)+(i.outAt?', out '+fmtDT(i.outAt):'')+' · ':'')+(i.guest?esc(i.guest)+' · ':'')+(cl(i).length?esc(names(cl(i)))+' · ':'')+(i.status==='occupied'?'Staying now':i.firstPass==null?'Not finished':i.firstPass?'Passed first time':reworkRounds(i)+' rework round'+(reworkRounds(i)===1?'':'s'))+(i.approvedAt?' · approved '+fmtDT(i.approvedAt):'')+'</span>'+(f.length?'<span class="small">'+esc(f.map(function(it){return it.label+(i.res[it.id].failCount>1?' ×'+i.res[it.id].failCount:'');}).join(', '))+'</span>':'')+'</button>';
+    });
+  }
+  return h+'</div>';
+}
+
+/* inspection screen */
+function stp(it,r){return '<div class="step"><button data-a="cdec" data-i="'+it.id+'" aria-label="Less">−</button><span class="num">'+(r.n==null?'–':r.n)+'</span><button data-a="cinc" data-i="'+it.id+'" aria-label="More">+</button></div>';}
+function row(i,it){
+  var r=i.res[it.id]||{},ov=r.fix==='overridden';
+  var re=i.status==='reinspect'&&r.fix&&r.fix!=='open';
+  var cls=r.r||'',ctl='',sub='',stk='',tap=false;
+  var lbl=esc(it.label)+(it.type==='swap'?' <small>swap · laundry</small>':'')+(it.type==='count'&&it.unit?' <small>'+esc(it.unit)+'</small>':'');
+  var pf='<button class="b p'+(r.r==='pass'?' on':'')+'" data-a="pass" data-i="'+it.id+'">Pass</button><button class="b f'+(r.r==='fail'?' on':'')+'" data-a="fail" data-i="'+it.id+'">Fail</button><button class="b n'+(r.r==='na'?' on':'')+'" data-a="na" data-i="'+it.id+'" aria-label="Not applicable">N/A</button>';
+  if(ov){
+    cls='ovr';stk=' stk';
+    ctl='<button class="b p" data-a="pass" data-i="'+it.id+'">Pass</button><button class="b n" data-a="unovr" data-i="'+it.id+'">Undo override</button>';
+    sub='<small>Overridden: '+esc(r.ovr||'accepted as is')+'</small>';
+  } else if(re){
+    cls=r.r==='pass'?'pass':(r.fix==='refailed'?'fail':'fix');stk=' stk';
+    ctl='<button class="b p'+(r.r==='pass'?' on':'')+'" data-a="pass" data-i="'+it.id+'">Pass</button><button class="b f'+(r.fix==='refailed'?' on':'')+'" data-a="fail" data-i="'+it.id+'">Still failing</button>'+(r.r==='fail'?'<button class="b o" data-a="ovr" data-i="'+it.id+'">Override</button>':'');
+    sub='<small class="'+(r.fix==='refailed'?'bad':'')+'">'+esc((r.note||r.auto||'').trim()||'Was failing; marked fixed')+'</small>';
+  } else if(it.type==='count'){
+    stk=' stk';ctl=stp(it,r)+pf;
+    if(r.r==='fail')sub='<small class="bad">'+esc((r.note||r.auto||'No note').trim())+'</small>';
+  } else {
+    ctl=pf;tap=true;
+    if(r.r==='fail')sub='<small class="bad">'+esc((r.note||r.auto||'No note').trim())+'</small>';
+    if(it.type==='swap'&&r.r==='pass')sub='<small>Laundry sent <span class="step sm" style="display:inline-flex;vertical-align:middle"><button data-a="ldec" data-i="'+it.id+'" aria-label="Less laundry">−</button><span class="num">'+(r.laundry==null?'–':r.laundry)+'</span><button data-a="linc" data-i="'+it.id+'" aria-label="More laundry">+</button></span></small>';
+  }
+  var lab=tap?'<button class="lbl" data-a="pass" data-i="'+it.id+'"><span>'+lbl+'</span>'+sub+'</button>':'<div class="lbl"><span>'+lbl+'</span>'+sub+'</div>';
+  return '<div class="row '+cls+stk+'">'+lab+'<div class="ctl">'+ctl+'</div></div>';
+}
+function checklist(i){
+  var re=i.status==='reinspect';
+  var items=i.items.filter(function(it){return inScope(i,it);});
+  var h='';
+  if(re&&!i.full)h+='<div class="banner info"><span>Re-inspecting '+items.length+' item'+(items.length===1?'':'s')+' that failed.</span><div class="acts"><button class="mini" data-a="fullrun">Re-run full checklist</button></div></div>';
+  var secs=[];items.forEach(function(it){if(secs.indexOf(it.section)<0)secs.push(it.section);});
+  secs.forEach(function(sec){
+    var its=items.filter(function(x){return x.section===sec;});
+    var done=its.filter(function(x){var r=i.res[x.id];return r&&r.r&&!(re&&r.fix==='fixed'&&r.r==='fail');}).length;
+    h+='<section class="sec"><div class="sech"><h3>'+esc(sec)+'</h3><span>'+done+'/'+its.length+'</span><button class="mini" data-a="secpass" data-s="'+esc(sec)+'">All pass</button></div>'+its.map(function(x){return row(i,x);}).join('')+'</section>';
+  });
+  return h;
+}
+function defectList(i){
+  var f=failsAll(i),h='',open=fails(i);
+  if(!f.length)return '<div class="empty">No defects.</div>';
+  h+='<div class="card stack"><b>'+open.length+' open'+(f.length>open.length?', '+(f.length-open.length)+' overridden':'')+'</b><p class="small muted">Fix each defect, override it if it is acceptable, or complete the room in one step once it is right.</p><button class="btn pri" data-a="fixall">'+(open.length?'Fix all and approve':'Approve room')+'</button></div>';
+  f.forEach(function(it){
+    var r=i.res[it.id],ph=photos[i.id+'|'+it.id],ov=r.fix==='overridden';
+    var who=dstaff(i,r);
+    h+='<div class="card defect"><div class="dh"><b>'+esc(it.label)+'</b><span>'+(r.sev==='urgent'&&!ov?'<span class="pill st-defects">Urgent</span> ':'')+(ov?'<span class="pill st-occupied">Overridden</span>':'<span class="pill st-'+(r.fix==='fixed'?'reinspect':'defects')+'">'+(r.fix==='fixed'?'Fixed':'Open')+'</span>')+'</span></div>'+
+      '<p>'+esc((r.note||r.auto||'No note').trim())+'</p>'+(ov?'<p class="small">Overridden: '+esc(r.ovr||'accepted as is')+'</p>':'')+'<p class="small muted">'+esc(it.section)+(who?' · Assigned: '+esc(who):'')+(r.failCount>1?' · failed '+r.failCount+' times':'')+'</p>'+
+      (ph?'<img src="'+ph+'" alt="Defect photo">':'')+
+      '<div class="acts">'+(ov?'<button class="mini" data-a="unovr" data-i="'+it.id+'">Undo override</button>':'<button class="mini" data-a="fail" data-i="'+it.id+'">Edit</button><button class="mini" data-a="fixed" data-i="'+it.id+'">'+(r.fix==='fixed'?'Undo fixed':'Mark fixed')+'</button><button class="mini" data-a="ovr" data-i="'+it.id+'">Override</button>')+'</div></div>';
+  });
+  return h;
+}
+function cleanersUI(i){
+  var act=state.staff.filter(function(s){return s.active!==false||cl(i).indexOf(s.id)>=0;});
+  if(!act.length)return '<p class="small muted">No staff on the list yet. <button class="link" data-a="gosub" data-v="staff">Add housekeeping staff</button></p>';
+  return '<div class="fl" role="group" aria-label="Cleaned by"><span>Cleaned by (tap everyone who worked this room)</span><div class="chips wrap">'+act.map(function(s){var on=cl(i).indexOf(s.id)>=0;return '<button class="chip'+(on?' on':'')+'" data-a="tcl" data-id="'+s.id+'" aria-pressed="'+on+'">'+esc(s.name)+'</button>';}).join('')+'</div></div>';
+}
+function vInsp(){
+  var i=insp(ui.iid);
+  if(!i){ui.view='board';return vBoard();}
+  var x=roomInfo(i.roomId)||{room:{number:'?'},block:{name:''}};
+  var cat=x.room.catId?catOf(x.room):null,occ=i.status==='occupied';
+  var h=hdr('Room '+x.room.number,x.block.name+' · '+floorLabel(x.room.floor)+(cat?' · '+cat.name:''),'back')+'<div class="stack">';
+  var need=i.items.filter(function(it){return it.required!==false;}).length,got=i.items.filter(function(it){return it.required!==false&&i.res[it.id]&&i.res[it.id].r;}).length;
+  var when=occ?'Checked in '+fmtDT(i.inAt):'Checked out '+fmtDT(outT(i))+(i.round>1?' · round '+i.round:'');
+  h+='<div class="card stack stb stb-'+i.status+'" style="padding-top:18px"><div style="display:flex;justify-content:space-between;gap:8px;align-items:center">'+pill(i.status)+'<span class="small muted">'+when+'</span></div>';
+  if(occ){
+    h+='<label class="f">Guest or booking note (optional)<input type="text" data-m="guest" value="'+esc(i.guest)+'" placeholder="Name, booking, late checkout…"></label><button class="btn" data-a="ritems" data-s="room" data-i="'+esc(i.roomId)+'">Items in this room</button>';
+  } else if(i.status!=='approved'){
+    h+=cleanersUI(i);
+    if(i.status==='awaiting')h+='<div class="prog" role="progressbar" aria-valuenow="'+got+'" aria-valuemax="'+need+'"><i style="width:'+(need?Math.round(100*got/need):0)+'%"></i></div><p class="small muted">'+got+' of '+need+' required items checked</p><button class="btn" data-a="ritems" data-s="room" data-i="'+esc(i.roomId)+'">Add or remove items for this room</button>';
+  } else if(cl(i).length)h+='<p class="small">Cleaned by '+esc(names(cl(i)))+'</p>';
+  h+='</div>';
+  if(occ)h+='<div class="banner info"><span>Guest is in the room. When they leave, tap <b>Check out guest</b> and the inspection starts.</span></div>';
+  else if(i.status==='awaiting'||i.status==='reinspect')h+=checklist(i);
+  else if(i.status==='defects'||i.status==='rework')h+=defectList(i);
+  else {
+    h+='<div class="card stack"><h3>'+(i.firstPass?'Passed first time':'Approved after '+i.round+' rework round'+(i.round>1?'s':''))+'</h3><p class="small muted">Approved '+fmtDT(i.approvedAt)+'. This inspection is locked.</p></div>';
+    var f=i.items.filter(function(it){return i.res[it.id]&&i.res[it.id].failCount;});
+    if(f.length)h+='<div class="card stack"><h3>Defects</h3>'+f.map(function(it){var r=i.res[it.id];return '<p class="small">'+esc(it.label)+(r.note?': '+esc(r.note):'')+(r.failCount>1?' (failed '+r.failCount+' times)':'')+(r.fix==='overridden'?' <b>Overridden: '+esc(r.ovr||'accepted as is')+'</b>':'')+'</p>';}).join('')+'</div>';
+  }
+  h+='<details class="card"><summary>History</summary><div class="hist">'+i.log.slice().reverse().map(function(l){return '<span>'+fmtDT(l.t)+' · '+esc(l.e)+'</span>';}).join('')+'</div></details></div>';
+  var bar='',open=fails(i);
+  if(occ)bar='<button class="btn danger" data-a="cancelin">Cancel check-in</button><button class="btn pri" data-a="checkout">Check out guest</button>';
+  else if(i.status==='awaiting')bar='<button class="btn pri" data-a="finish">Finish inspection</button>';
+  else if(i.status==='reinspect')bar='<button class="btn pri" data-a="finish">Finish re-inspection</button>';
+  else if(i.status==='defects')bar='<button class="btn" data-a="wa" data-v="defects">WhatsApp</button>'+(open.length?'<button class="btn pri" data-a="startrework">Start rework</button>':'<button class="btn pri" data-a="approvenow">Approve room</button>');
+  else if(i.status==='rework'){var allf=open.every(function(it){return i.res[it.id].fix==='fixed';});bar='<button class="btn" data-a="wa" data-v="defects">WhatsApp</button>'+(!open.length?'<button class="btn pri" data-a="approvenow">Approve room</button>':allf?'<button class="btn pri" data-a="ready">Ready for re-inspection</button>':'<button class="btn" data-a="allfixed">Mark all fixed</button>');}
+  else bar='<button class="btn" data-a="wa" data-v="ready">WhatsApp</button><button class="btn" data-a="reopen">Reopen</button><button class="btn pri" data-a="newin">Check in guest</button>';
+  return h+'<div class="bar">'+bar+'</div>';
+}
+
+function ritemsSheet(sh){
+  var room=null,block,own,title,scopeKey;
+  if(sh.scope==='room'){var x=roomInfo(sh.id);room=x.room;block=x.block;own=room;title='Room '+room.number+': items';scopeKey='room:'+room.id;}
+  else{block=blockOf(sh.id);own=block;title=block.name+': items for every room';scopeKey='block:'+block.id;}
+  var srcName={std:'Standard',cat:'Category',block:'Block',room:'This room'};
+  var h='<h2>'+esc(title)+'</h2><p class="small muted">'+(room?esc(block.name)+'. Changes apply to this room now and to every later checkout. Remove what this room does not have, or add items only this room has.':'Applies to every room in this block. Remove items the block does not have (for example a napkin stand) or add items every room here has (for example a water kettle).')+' Past inspections are never changed.</p><div class="list">';
+  candidates(room,block).forEach(function(c){
+    var mine=(c.src==='room'&&room)||(c.src==='block'&&!room);
+    var offB=!!room&&block.off.indexOf(c.t.id)>=0,off=own.off.indexOf(c.t.id)>=0;
+    h+='<div class="rowl"><span class="grow">'+esc(c.t.label)+' <span class="muted small">· '+esc(c.t.section)+'</span> <span class="tag">'+srcName[c.src]+'</span>'+(offB?' <span class="tag off">Off for block</span>':off?' <span class="tag off">Removed</span>':'')+'</span>';
+    if(mine)h+='<button class="mini" data-a="edititem" data-cat="'+scopeKey+'" data-i="'+c.t.id+'">Edit</button>';
+    else if(!offB)h+='<button class="mini" data-a="rtog" data-t="'+c.t.id+'">'+(off?'Restore':'Remove')+'</button>';
+    h+='</div>';
+  });
+  return h+'</div><div class="acts"><button class="btn" data-a="closesheet">Done</button><button class="btn pri" data-a="additem" data-cat="'+scopeKey+'">Add item</button></div>';
+}
+/* settings */
+function vSettings(){
+  var s=ui.sub;
+  if(!s){
+    var rows=[['backup','Backup and sharing','WhatsApp number, export, import, share as a file'],['rooms','Blocks and rooms','Assign a category to each room'],['cats','Room categories','Items that differ by category'],['checklist','Standard checklist','Edit items, types and order'],['cart','HK cart',state.cart.length+' items on the cart'],['report','Daily report','Google Sheet link and shift end'],['staff','Housekeeping staff',state.staff.length+' on the list'],['demo','Demo data','Load or remove example inspections']];
+    return hdr('Settings')+'<div class="stack">'+rows.map(function(r){return '<button class="card" data-a="gosub" data-v="'+r[0]+'" style="display:flex;align-items:center;gap:10px;text-align:left"><span style="flex:1"><b>'+r[1]+'</b><br><span class="small muted">'+r[2]+'</span></span>'+ic('chev').replace('<svg','<svg style="width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.8"')+'</button>';}).join('')+'</div>';
+  }
+  var h='<div class="stack">';
+  if(s==='backup'){
+    h=hdr('Backup and sharing',null,'subback')+h;
+    var lb=state.settings.lastBackup;
+    var cssEl=document.getElementById('hlog-css'),srcEl=document.getElementById('hlog-src');
+    var mb=cssEl&&srcEl?((cssEl.textContent.length+srcEl.textContent.length+JSON.stringify(state).length+JSON.stringify(photos).length)/1048576).toFixed(1):null;
+    h+='<div class="card stack"><label class="f">Reception WhatsApp number (optional)<input type="tel" inputmode="tel" id="phone" data-m="phone" placeholder="Country code first, digits only" value="'+esc(state.settings.phone)+'"></label><p class="small muted">Used for the Open WhatsApp button. Leave blank to pick the contact in WhatsApp.</p></div>';
+    h+='<div class="card stack"><h3>Backup</h3><p class="small muted">All data stays on this device. Last backup: '+(lb?fmtDT(lb):'never')+'.</p><button class="btn pri" data-a="expjson">Export backup (JSON)</button><label class="btn" style="cursor:pointer">Import backup<input type="file" accept=".json,application/json" data-c="import" hidden></label></div>';
+    h+='<div class="card stack"><h3>Share as a file</h3><p class="small muted">Makes one HTML file with this app and your data inside'+(mb?' (about '+mb+' MB with everything)':'')+'. Save it, then attach it in WhatsApp as a document. The other person must open it in a browser; some phones will not run a local HTML file, and then the backup file plus the app link is the fallback.</p><button class="btn pri" data-a="sharefull">App + all data</button><button class="btn" data-a="sharesetup">App + setup only (no inspections)</button></div>';
+    h+='<div class="card stack"><h3>Erase everything</h3><p class="small muted">Resets rooms, checklist, staff and all inspections.</p><button class="btn danger" data-a="erase">Erase all data</button></div>';
+  } else if(s==='rooms'){
+    h=hdr('Blocks and rooms',null,'subback')+h;
+    var catOpts=function(v){return '<option value="">No category</option>'+state.categories.map(function(c){return '<option value="'+c.id+'"'+(v===c.id?' selected':'')+'>'+esc(c.name)+'</option>';}).join('');};
+    state.blocks.forEach(function(b){
+      var bn=(b.extra.length+b.off.length);
+      h+='<div class="card stack"><label class="f">Block name<input type="text" data-m="bname" data-i="'+b.id+'" value="'+esc(b.name)+'"></label><label class="f">Set every room in this block to<select data-c="bulkcat" data-i="'+b.id+'"><option value="__">Choose…</option>'+catOpts('')+'</select></label><button class="btn" data-a="ritems" data-s="block" data-i="'+b.id+'">Items for every room in this block'+(bn?' ('+bn+' changes)':'')+'</button><div class="list">'+
+        b.rooms.map(function(r){var rn=r.extra.length+r.off.length;return '<div class="rowl wr"><span class="grow"><b>'+esc(r.number)+'</b> <span class="small muted">'+floorLabel(r.floor)+'</span> '+(r.active===false?'<span class="tag off">Archived</span>':'')+'</span><button class="mini" data-a="ritems" data-s="room" data-i="'+esc(r.id)+'">Items'+(rn?' ('+rn+')':'')+'</button><button class="mini" data-a="rarch" data-i="'+esc(r.id)+'">'+(r.active===false?'Restore':'Archive')+'</button><select data-c="rcat" data-i="'+esc(r.id)+'" aria-label="Category for room '+esc(r.number)+'">'+catOpts(r.catId)+'</select></div>';}).join('')+'</div><button class="btn" data-a="addroom" data-i="'+b.id+'">Add room to '+esc(b.name)+'</button></div>';
+    });
+    h+='<button class="btn" data-a="addblock">Add block</button>';
+  } else if(s==='cats'){
+    h=hdr('Room categories',null,'subback')+h;
+    h+='<p class="small muted">The category decides what a room has: kettle, cushions, sofa, bathrobes and so on. A room checks the standard items its category has, plus the category\'s extra items. The block and the room can add or remove items on top of that.</p>';
+    state.categories.forEach(function(c){
+      var used=state.blocks.reduce(function(a,b){return a+b.rooms.filter(function(r){return r.catId===c.id;}).length;},0);
+      h+='<div class="card stack"><label class="f">Category name<input type="text" data-m="cname" data-i="'+c.id+'" value="'+esc(c.name)+'"></label><p class="small muted">'+used+' room'+(used===1?'':'s')+' assigned</p>'+
+        '<details><summary>Standard items this category has ('+(state.template.length-c.na.length)+' of '+state.template.length+')</summary><p class="small muted">Untick what rooms in this category do not have, for example kettle, cushions, sofa or bathrobes.</p><div class="list">'+state.template.map(function(t){return '<label class="chk"><input type="checkbox" data-c="catna" data-i="'+c.id+'" data-t="'+t.id+'"'+(c.na.indexOf(t.id)<0?' checked':'')+'> <span>'+esc(t.label)+' <span class="muted small">· '+esc(t.section)+'</span></span></label>';}).join('')+'</div></details>'+
+        '<div><b class="small">Extra items for this category</b>'+(c.extra.length?'<div class="list">'+c.extra.map(function(t){return '<div class="rowl"><span class="grow">'+esc(t.label)+' <span class="muted small">· '+esc(t.section)+'</span></span><button class="mini" data-a="edititem" data-cat="'+c.id+'" data-i="'+t.id+'">Edit</button></div>';}).join('')+'</div>':'<p class="small muted">None yet.</p>')+'</div>'+
+        '<div class="acts" style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" style="flex:1" data-a="additem" data-cat="'+c.id+'">Add extra item</button>'+(used?'':'<button class="btn danger" style="flex:1" data-a="delcat" data-i="'+c.id+'">Delete</button>')+'</div></div>';
+    });
+    h+='<button class="btn" data-a="addcat">Add category</button>';
+  } else if(s==='checklist'){
+    h=hdr('Standard checklist',null,'subback')+h;
+    h+='<button class="btn pri" data-a="additem" data-cat="tpl">Add item</button>';
+    var secs=[];state.template.forEach(function(t){if(secs.indexOf(t.section)<0)secs.push(t.section);});
+    secs.forEach(function(sec){
+      h+='<div class="card"><h3 style="margin-bottom:6px">'+esc(sec)+'</h3><div class="list">'+state.template.filter(function(t){return t.section===sec;}).map(function(t){return '<div class="rowl"><span class="grow">'+esc(t.label)+' <span class="tag">'+t.type+'</span>'+(t.required===false?' <span class="tag">optional</span>':'')+(t.active===false?' <span class="tag off">Off</span>':'')+'</span><button class="mini" data-a="mv" data-i="'+t.id+'" data-d="-1" aria-label="Move up">↑</button><button class="mini" data-a="mv" data-i="'+t.id+'" data-d="1" aria-label="Move down">↓</button><button class="mini" data-a="edititem" data-cat="tpl" data-i="'+t.id+'">Edit</button></div>';}).join('')+'</div></div>';
+    });
+  } else if(s==='report'){
+    h=hdr('Daily report',null,'subback')+h;
+    var cfg=state.settings;
+    h+='<div class="card stack"><label class="f">Google Apps Script web app URL<input type="text" inputmode="url" data-m="rurl" value="'+esc(cfg.reportUrl)+'" placeholder="https://script.google.com/macros/s/…/exec" autocapitalize="off" autocomplete="off"></label><label class="f">Secret key (same as in the script)<input type="text" data-m="rkey" value="'+esc(cfg.reportKey)+'" autocapitalize="off" autocomplete="off"></label><label class="f">Shift ends at (optional reminder)<input type="time" data-m="shiftend" value="'+esc(cfg.shiftEnd)+'"></label><p class="small muted">The reminder appears on the Rooms screen from one hour before shift end, until the report is submitted. It cannot send a phone notification.</p></div>';
+    h+='<div class="card stack"><h3>How it reaches the sheet</h3><p class="small muted">The app sends the report to your own Google Apps Script, which writes it into the sheet it is attached to. Guest notes are never included. Submitting needs internet; if it fails, use Copy as table in Reports and paste it into the sheet.</p><button class="btn" data-a="nav" data-v="reports">Go to Reports</button></div>';
+  } else if(s==='cart'){
+    h=hdr('HK cart',null,'subback')+h;
+    h+='<p class="small muted">What the housekeeping cart carries into each room. It appears as the first section of every inspection. Rename, reorder, switch off or delete items.</p>';
+    h+='<div class="card stack"><label class="f">Add a cart item<input type="text" id="newcart" placeholder="e.g. Duster"></label><button class="btn pri" data-a="kadd">Add to cart</button></div>';
+    if(state.cart.length)h+='<div class="card"><div class="list">'+state.cart.map(function(k){return '<div class="rowl wr"><input type="text" data-m="kname" data-i="'+k.id+'" value="'+esc(k.label)+'" aria-label="Cart item name"><span class="grow">'+(k.active===false?'<span class="tag off">Off</span>':'')+'</span><button class="mini" data-a="kmv" data-i="'+k.id+'" data-d="-1" aria-label="Move up">↑</button><button class="mini" data-a="kmv" data-i="'+k.id+'" data-d="1" aria-label="Move down">↓</button><button class="mini" data-a="ktog" data-i="'+k.id+'">'+(k.active===false?'Switch on':'Switch off')+'</button><button class="mini" data-a="kdel" data-i="'+k.id+'">Delete</button></div>';}).join('')+'</div></div>';
+    else h+='<div class="empty">The cart is empty.</div>';
+  } else if(s==='staff'){
+    h=hdr('Housekeeping staff',null,'subback')+h;
+    h+='<div class="card stack"><label class="f">Add a name<input type="text" id="newstaff" data-m="newstaff" placeholder="Name"></label><button class="btn pri" data-a="addstaff">Add</button></div>';
+    if(state.staff.length)h+='<div class="card"><div class="list">'+state.staff.map(function(p){return '<div class="rowl"><input type="text" data-m="sname" data-i="'+p.id+'" value="'+esc(p.name)+'" aria-label="Staff name"><button class="mini" data-a="sarch" data-i="'+p.id+'">'+(p.active===false?'Restore':'Archive')+'</button></div>';}).join('')+'</div></div>';
+  } else if(s==='demo'){
+    h=hdr('Demo data',null,'subback')+h;
+    var has=state.inspections.some(function(i){return i.demo;});
+    h+='<div class="card stack"><p class="small">Adds example inspections in New Naina floor 0 (rooms 204, 205, 206, 208) so you can see the screens. They are flagged as demo and removed in one tap, without touching real data.</p>'+(has?'<button class="btn danger" data-a="rmdemo">Remove demo data</button>':'<button class="btn pri" data-a="ldemo">Load demo data</button>')+'</div>';
+  }
+  return h+'</div>';
+}
+
+/* sheets */
+function sheet(){
+  var sh=ui.sheet;if(!sh)return '';
+  var h='<div class="scrim" data-a="closesheet"></div><div class="sheet" role="dialog" aria-modal="true">';
+  var i=insp(ui.iid);
+  if(sh.type==='fail'){
+    var it=itemOf(i,sh.itemId),d=sh.draft,sw=it.type==='swap';
+    var chips=['Not clean','Needs refill','Missing','Not changed','Dusty','Damaged'].concat(sw?['Old not removed to laundry','Fresh not fitted']:[]).concat(it.type==='count'?['Too few','Too many']:[]);
+    h+='<h2>'+esc(it.label)+'</h2><div class="chips" style="flex-wrap:wrap">'+chips.map(function(c){return '<button class="chip" data-a="chip" data-v="'+esc(c)+'">'+esc(c)+'</button>';}).join('')+'</div>'+
+      '<label class="f">What is wrong<textarea id="fnote" data-m="fnote" placeholder="Short note, any language">'+esc(d.note)+'</textarea></label>'+
+      '<div class="seg"><button class="chip'+(d.sev!=='urgent'?' on':'')+'" data-a="sev" data-v="normal">Normal</button><button class="chip'+(d.sev==='urgent'?' on':'')+'" data-a="sev" data-v="urgent">Urgent</button></div>'+
+      (function(){var act=state.staff.filter(function(s){return s.active!==false||d.staffs.indexOf(s.id)>=0;});return act.length?'<div class="fl"><span>Assigned to (tap all that apply)</span><div class="chips wrap">'+act.map(function(s){var on=d.staffs.indexOf(s.id)>=0;return '<button class="chip'+(on?' on':'')+'" data-a="fstaff" data-id="'+s.id+'" aria-pressed="'+on+'">'+esc(s.name)+'</button>';}).join('')+'</div></div>':'';})()+
+      (d.photo?'<div style="display:flex;gap:10px;align-items:center"><img src="'+d.photo+'" alt="Defect photo" style="width:84px;height:84px;object-fit:cover;border-radius:10px"><button class="mini" data-a="rmphoto">Remove photo</button></div>':'<label class="btn" style="cursor:pointer">Add photo<input type="file" accept="image/*" capture="environment" data-c="photo" hidden></label>')+
+      '<div class="acts"><button class="btn" data-a="closesheet">Cancel</button>'+(i.status==='awaiting'&&i.res[it.id]&&i.res[it.id].r==='fail'?'<button class="btn" data-a="clearfail">Clear</button>':'')+'<button class="btn pri" data-a="savefail">Save defect</button></div>';
+  } else if(sh.type==='wa'){
+    var ph=String(state.settings.phone||'').replace(/\D/g,'');
+    h+='<h2>'+(sh.kind==='daily'?'Daily summary':sh.kind==='ready'?'Room ready message':'Message for reception')+'</h2><textarea class="wa" id="watext" data-m="watext">'+esc(sh.text)+'</textarea><p class="small muted">Nothing is sent automatically. You choose when to send. Photos stay in the app.</p><div class="acts"><button class="btn" data-a="copy">Copy</button><a class="btn pri" target="_blank" rel="noopener" href="https://wa.me/'+ph+'?text='+encodeURIComponent(sh.text)+'">Open WhatsApp</a></div><button class="btn" data-a="closesheet">Close</button>';
+  } else if(sh.type==='start'){
+    var x=roomInfo(sh.roomId);
+    h+='<h2>Room '+esc(x.room.number)+'</h2><p class="muted">'+esc(x.block.name)+' · '+floorLabel(x.room.floor)+'</p><button class="btn pri" data-a="checkin">Check in guest</button><button class="btn" data-a="startnow">Already checked out: inspect now</button><button class="btn" data-a="markout">Already checked out: inspect later</button><button class="btn" data-a="closesheet">Cancel</button>';
+  } else if(sh.type==='missing'){
+    h+='<h2>'+sh.ids.length+' item'+(sh.ids.length===1?'':'s')+' not checked</h2><div class="list">'+sh.ids.map(function(id){var it=itemOf(i,id);return '<div class="rowl"><span class="grow">'+esc(it.label)+' <span class="muted small">· '+esc(it.section)+'</span></span></div>';}).join('')+'</div><div class="acts"><button class="btn" data-a="closesheet">Go back</button><button class="btn pri" data-a="missingpass">Mark them pass</button></div>';
+  } else if(sh.type==='reopen'){
+    h+='<h2>Reopen this inspection</h2><label class="f">Reason<textarea data-m="d" data-k="reason" placeholder="Why is it being reopened?">'+esc(sh.draft.reason)+'</textarea></label><div class="acts"><button class="btn" data-a="closesheet">Cancel</button><button class="btn pri" data-a="doreopen">Reopen</button></div>';
+  } else if(sh.type==='confirm'){
+    h+='<h2>'+esc(sh.title)+'</h2><p>'+esc(sh.text)+'</p><div class="acts"><button class="btn" data-a="closesheet">Cancel</button><button class="btn '+(sh.pri?'pri':'danger')+'" data-a="yes">'+esc(sh.label)+'</button></div>';
+  } else if(sh.type==='item'){
+    var d2=sh.draft;
+    h+='<h2>'+(sh.id?'Edit item':'Add item')+'</h2><label class="f">Label<input type="text" data-m="d" data-k="label" value="'+esc(d2.label)+'"></label><label class="f">Section<input type="text" list="secs" data-m="d" data-k="section" value="'+esc(d2.section)+'"></label><datalist id="secs">'+state.template.map(function(t){return t.section;}).filter(function(v,k,a){return a.indexOf(v)===k;}).map(function(v){return '<option value="'+esc(v)+'">';}).join('')+'</datalist>'+
+      '<label class="f">Type<select data-c="d" data-k="type"><option value="check"'+(d2.type==='check'?' selected':'')+'>Check (pass or fail)</option><option value="swap"'+(d2.type==='swap'?' selected':'')+'>Swap (laundry out, fresh in)</option><option value="count"'+(d2.type==='count'?' selected':'')+'>Count (record a number)</option></select></label>'+
+      (d2.type==='count'?'<label class="f">Unit (optional, for example sachets)<input type="text" data-m="d" data-k="unit" value="'+esc(d2.unit)+'"></label>':'')+
+      '<label class="chk"><input type="checkbox" data-c="d" data-k="required"'+(d2.required?' checked':'')+'> Required before finishing</label><label class="chk"><input type="checkbox" data-c="d" data-k="active"'+(d2.active?' checked':'')+'> Active</label>'+
+      '<div class="acts"><button class="btn" data-a="closesheet">Cancel</button>'+(sh.id?'<button class="btn danger" data-a="delitem">Delete</button>':'')+'<button class="btn pri" data-a="saveitem">Save</button></div>';
+  } else if(sh.type==='room'){
+    h+='<h2>Add room</h2><label class="f">Room number<input type="text" data-m="d" data-k="number" value="'+esc(sh.draft.number)+'"></label><label class="f">Floor (number, blank if unknown)<input type="text" inputmode="numeric" data-m="d" data-k="floor" value="'+esc(sh.draft.floor)+'"></label><div class="acts"><button class="btn" data-a="closesheet">Cancel</button><button class="btn pri" data-a="saveroom">Add</button></div>';
+  } else if(sh.type==='block'){
+    h+='<h2>Add block</h2><label class="f">Block name<input type="text" data-m="d" data-k="name" value="'+esc(sh.draft.name)+'"></label><div class="acts"><button class="btn" data-a="closesheet">Cancel</button><button class="btn pri" data-a="saveblock">Add</button></div>';
+  } else if(sh.type==='override'){
+    var oi=itemOf(i,sh.itemId);
+    h+='<h2>Override: '+esc(oi.label)+'</h2><p class="small muted">The defect stays on record but no longer blocks approval. The reason is shared with reception when the room is approved.</p><div class="chips wrap">'+['Accepted as is','Guest request','Will fix later','Not applicable here','Minor'].map(function(c){return '<button class="chip" data-a="ovrchip" data-v="'+esc(c)+'">'+esc(c)+'</button>';}).join('')+'</div><label class="f">Reason<textarea data-m="d" data-k="note" placeholder="Why is this acceptable?">'+esc(sh.draft.note)+'</textarea></label><div class="acts"><button class="btn" data-a="closesheet">Cancel</button><button class="btn pri" data-a="saveovr">Override defect</button></div>';
+  } else if(sh.type==='ritems'){
+    h+=ritemsSheet(sh);
+  } else if(sh.type==='text'){
+    h+='<h2>'+esc(sh.title)+'</h2><p class="small muted">'+esc(sh.msg||'Saving a file is not available in this view. Copy the text and paste it into a note or message to keep it.')+'</p><textarea class="wa" id="watext" readonly>'+esc(sh.text)+'</textarea><div class="acts"><button class="btn" data-a="closesheet">Close</button><button class="btn pri" data-a="copy">Copy</button></div>';
+  } else if(sh.type==='importc'){
+    h+='<h2>Replace all data?</h2><p>'+(sh.file?'This shared file carries data from ':'This backup is from ')+esc(fmtDT(sh.when))+'. '+(sh.file?'It is newer than the data on this device. ':'')+'Using it replaces everything currently on this device.</p><div class="acts"><button class="btn" data-a="closesheet">'+(sh.file?'Keep my data':'Cancel')+'</button><button class="btn danger" data-a="doimport">'+(sh.file?'Use file data':'Replace data')+'</button></div>';
+  }
+  return h+'</div>';
+}
+function render(reset){
+  var y=window.scrollY,sh0=app.querySelector('.sheet'),sst=sh0?sh0.scrollTop:0,same=!!(ui.sheet&&lastSheet===ui.sheet.type);
+  var body;
+  switch(ui.view){case 'queue':body=vQueue();break;case 'reports':body=vReports();break;case 'settings':body=vSettings();break;case 'insp':body=vInsp();break;default:body=vBoard();}
+  var q=state.inspections.filter(function(i){return i.status!=='approved'&&i.status!=='awaiting'&&i.status!=='occupied';}).length;
+  var nav='';
+  if(ui.view!=='insp'){
+    nav='<nav class="nav" aria-label="Main">'+[['board','Rooms','grid'],['queue','Rework','list'],['reports','Reports','chart'],['settings','Settings','gear']].map(function(n){return '<button data-a="nav" data-v="'+n[0]+'" class="'+(ui.view===n[0]?'on':'')+'"'+(ui.view===n[0]?' aria-current="page"':'')+'>'+ic(n[2])+'<span>'+n[1]+'</span>'+(n[0]==='queue'&&q?'<b class="badge">'+q+'</b>':'')+'</button>';}).join('')+'</nav>';
+  }
+  app.innerHTML=body+nav+sheet()+(ui.toast?'<div class="toast" role="status">'+esc(ui.toast)+'</div>':'');
+  lastSheet=ui.sheet?ui.sheet.type:null;
+  if(same){var s1=app.querySelector('.sheet');if(s1)s1.scrollTop=sst;}
+  window.scrollTo(0,reset?0:y);
+}
+function go(view,extra){Object.assign(ui,{view:view,sheet:null},extra||{});render(true);}
+function openInsp(id){if(ui.view!=='insp')ui.from=ui.view;go('insp',{iid:id});}
+function commit(){save();render();}
+function I(){return insp(ui.iid);}
+
+/* ---------- inspection logic ---------- */
+function setRes(i,id,patch,drop){var o=Object.assign({},i.res[id]||{},patch);(drop||[]).forEach(function(k){delete o[k];});i.res[id]=o;}
+function approve(i){
+  i.status='approved';i.approvedAt=Date.now();i.full=false;
+  i.items.forEach(function(it){var r=i.res[it.id];if(r&&r.fix&&r.fix!=='overridden')r.fix='verified';});
+  var ov=overrides(i).length;
+  i.log.push({t:i.approvedAt,e:(i.firstPass?'Approved, passed first time':'Approved after '+i.round+' rework round'+(i.round>1?'s':''))+(ov?' ('+ov+' defect'+(ov===1?'':'s')+' overridden)':'')});
+  save();openWA('ready',i);
+}
+function doFinish(i){
+  var was=i.status,f=fails(i);
+  f.forEach(function(it){var r=i.res[it.id];
+    if(was==='awaiting'){r.failCount=r.failCount||1;}
+    else if(r.fix==='refailed'){r.failCount=(r.failCount||1)+1;}
+    else if(!r.failCount){r.failCount=1;}
+    r.fix='open';});
+  if(was==='awaiting')i.firstPass=f.length===0;
+  if(!f.length){approve(i);return;}
+  if(was==='reinspect')i.round++;
+  i.status='defects';i.full=false;
+  i.log.push({t:Date.now(),e:(was==='reinspect'?'Re-inspection':'Inspection')+' finished: '+f.length+' defect'+(f.length===1?'':'s')});
+  save();openWA('defects',i);
+}
+function askComplete(i){
+  var f=fails(i);
+  ui.sheet={type:'confirm',pri:true,title:f.length?'Mark '+f.length+' defect'+(f.length===1?'':'s')+' fixed and approve?':'Approve this room?',text:'Use this when you have checked the room and it is now right. The room is approved without a separate re-inspection pass.'+(overrides(i).length?' Overridden defects stay on record as overrides.':''),label:f.length?'Fix and approve':'Approve',fn:function(){completeDirect(i);}};
+  render();
+}
+function completeDirect(i){
+  fails(i).forEach(function(it){setRes(i,it.id,{r:'pass',fix:'verified'});});
+  i.log.push({t:Date.now(),e:'Completed by POC: defects marked fixed, no separate re-inspection'});
+  approve(i);
+}
+
+/* ---------- actions ---------- */
+A.nav=function(el){go(el.dataset.v,{sub:null});};
+A.back=function(){go(ui.from||'board');};
+A.gosub=function(el){go('settings',{sub:el.dataset.v});};
+A.subback=function(){go('settings',{sub:null});};
+A.fstatus=function(el){ui.fStatus=ui.fStatus===el.dataset.v?'all':el.dataset.v;render();};
+A.fblock=function(el){ui.fBlock=el.dataset.v;render();};
+A.dismisscat=function(){state.settings.catDismissed=true;commit();};
+A.room=function(el){var c=currentFor(el.dataset.i);if(c)openInsp(c.id);else{ui.sheet={type:'start',roomId:el.dataset.i};render();}};
+A.open=function(el){openInsp(el.dataset.i);};
+A.checkin=function(){var i=newInsp(ui.sheet.roomId,false,0,true),x=roomInfo(i.roomId);ui.sheet=null;save();toast('Room '+x.room.number+' ('+x.block.name+') marked occupied');};
+A.newin=function(){var o=I(),n=newInsp(o.roomId,false,0,true);save();go('insp',{iid:n.id});};
+A.checkout=function(){
+  var i=I(),x=roomInfo(i.roomId);
+  i.status='awaiting';i.outAt=Date.now();i.items=itemsFor(x.room,x.block);i.res={};
+  i.log.push({t:i.outAt,e:'Guest checked out, awaiting inspection'});commit();
+};
+A.cancelin=function(){
+  var i=I();
+  ui.sheet={type:'confirm',title:'Cancel this check-in?',text:'Use this only if the room was marked occupied by mistake. The stay is removed from the log.',label:'Cancel check-in',fn:function(){state.inspections=state.inspections.filter(function(x){return x.id!==i.id;});save();go('board');}};
+  render();
+};
+A.startnow=function(){var i=newInsp(ui.sheet.roomId);save();openInsp(i.id);};
+A.markout=function(){newInsp(ui.sheet.roomId);ui.sheet=null;save();toast('Marked as checked out');};
+A.closesheet=function(){var b=ui.sheet&&ui.sheet.back;ui.sheet=b||null;render();};
+A.reptab=function(el){ui.repTab=el.dataset.v;render(true);};
+A.reprange=function(el){ui.repRange=el.dataset.v;render();};
+A.daily=function(){openWA('daily');};
+A.expinsp=exportInsp;A.expdef=exportDef;A.expjson=exportJson;
+A.copyreport=function(){ui.sheet={type:'text',title:'Daily report',msg:'Copy this and paste it into the sheet. Rows are tab separated, so they fall into columns.',text:reportTSV(buildReport())};render();};
+A.submit=function(){
+  var s=state.settings;
+  if(!s.reportUrl){toast('Add the Google Sheet link in Settings first.');go('settings',{sub:'report'});return;}
+  var rp=buildReport(),body=JSON.stringify({key:s.reportKey||'',report:rp});
+  var fail=function(msg){ui.sheet={type:'text',title:'Could not submit',msg:msg+' Copy the table below and paste it into the sheet instead.',text:reportTSV(rp)};render();};
+  toast('Submitting…');
+  var post=function(){return fetch(s.reportUrl,{method:'POST',body:body,headers:{'Content-Type':'text/plain;charset=utf-8'},redirect:'follow'});};
+  var blind=function(){return fetch(s.reportUrl,{method:'POST',body:body,mode:'no-cors',redirect:'follow'}).then(function(){markSubmitted(false);toast('Sent. The sheet did not confirm, so check it.');},function(){fail('The sheet could not be reached (offline, or the link is wrong).');});};
+  try{
+    post().then(function(r){return r.text();}).then(function(tx){
+      var j=null;try{j=JSON.parse(tx);}catch(e){}
+      if(j&&j.ok){markSubmitted(true);toast('Submitted '+j.rooms+' room row'+(j.rooms===1?'':'s')+' to the sheet.');}
+      else if(j&&j.error){fail('The sheet refused it: '+j.error+'.');}
+      else{markSubmitted(false);toast('Sent, but no confirmation. Check the sheet.');}
+    },blind);
+  }catch(e){fail('Sending is not possible from this view.');}
+};
+A.sharefull=function(){shareFile(true);};
+A.sharesetup=function(){shareFile(false);};
+A.copy=function(){
+  var t=document.getElementById('watext');if(!t)return;
+  var fallback=function(){try{t.removeAttribute('readonly');t.focus();t.select();document.execCommand('copy');toast('Copied');}catch(e){toast('Select the text and copy it by hand.');}};
+  try{navigator.clipboard.writeText(t.value).then(function(){toast('Copied');},fallback);}catch(e){fallback();}
+};
+A.wa=function(el){openWA(el.dataset.v,I());};
+/* who cleaned */
+A.tcl=function(el){var i=I(),id=el.dataset.id,k=cl(i).indexOf(id);i.cleaners=cl(i).slice();if(k>=0)i.cleaners.splice(k,1);else i.cleaners.push(id);commit();};
+/* checklist rows */
+A.pass=function(el){
+  var i=I(),it=itemOf(i,el.dataset.i),old=i.res[it.id]||{};
+  if(i.status==='reinspect'&&old.fix&&old.fix!=='open'){
+    if(old.r==='pass')setRes(i,it.id,{r:'fail',fix:'fixed'});else setRes(i,it.id,{r:'pass',fix:'verified'});
+  } else if(old.r==='pass'){setRes(i,it.id,{},['r']);}
+  else{var drop=['auto'];if(old.fix==='open'&&!old.failCount)drop.push('fix');setRes(i,it.id,{r:'pass'},drop);}
+  commit();
+};
+A.na=function(el){var i=I(),it=itemOf(i,el.dataset.i),old=i.res[it.id]||{};if(old.r==='na')setRes(i,it.id,{},['r']);else setRes(i,it.id,{r:'na'});commit();};
+A.fail=function(el){
+  var i=I(),it=itemOf(i,el.dataset.i),old=i.res[it.id]||{};
+  ui.sheet={type:'fail',itemId:it.id,draft:{note:old.note||'',sev:old.sev||'normal',staffs:(old.staffs&&old.staffs.length?old.staffs:cl(i)).slice(),photo:photos[i.id+'|'+it.id]||''}};render();
+};
+A.chip=function(el){var d=ui.sheet.draft;d.note=(d.note?d.note.replace(/[\s,]+$/,'')+', ':'')+el.dataset.v;render();};
+A.sev=function(el){ui.sheet.draft.sev=el.dataset.v;render();};
+A.fstaff=function(el){var d=ui.sheet.draft,k=d.staffs.indexOf(el.dataset.id);if(k>=0)d.staffs.splice(k,1);else d.staffs.push(el.dataset.id);render();};
+A.rmphoto=function(){ui.sheet.draft.photo='';render();};
+A.savefail=function(){
+  var i=I(),sh=ui.sheet,it=itemOf(i,sh.itemId),old=i.res[it.id]||{},d=sh.draft;
+  var fix=(i.status==='reinspect'&&['fixed','verified','refailed'].indexOf(old.fix)>=0)?'refailed':(i.status==='reinspect'?'open':old.fix);
+  var o={r:'fail',note:d.note.trim(),sev:d.sev,staffs:d.staffs.slice()};
+  if(fix)o.fix=fix;
+  setRes(i,it.id,o,['staff']);
+  var key=i.id+'|'+it.id;
+  if(d.photo){photos[key]=d.photo;savePhotos();}else if(photos[key]){delete photos[key];savePhotos();}
+  ui.sheet=null;commit();
+};
+A.clearfail=function(){var i=I();setRes(i,ui.sheet.itemId,{},['r','note','sev','staff','staffs','auto']);ui.sheet=null;commit();};
+/* counts record a number only; there is no minimum or maximum */
+A.cinc=function(el){stepCount(el.dataset.i,1);};
+A.cdec=function(el){stepCount(el.dataset.i,-1);};
+function stepCount(id,dir){var i=I(),old=i.res[id]||{};setRes(i,id,{n:Math.max(0,(old.n==null?0:old.n)+dir)});commit();}
+A.linc=function(el){var i=I(),o=i.res[el.dataset.i]||{};setRes(i,el.dataset.i,{laundry:(o.laundry==null?0:o.laundry)+1});commit();};
+A.ldec=function(el){var i=I(),o=i.res[el.dataset.i]||{};setRes(i,el.dataset.i,{laundry:Math.max(0,(o.laundry==null?1:o.laundry)-1)});commit();};
+A.secpass=function(el){
+  var i=I();
+  i.items.forEach(function(it){
+    if(it.section!==el.dataset.s||!inScope(i,it))return;
+    var r=i.res[it.id]||{};
+    if(i.status==='reinspect'&&r.fix&&r.fix!=='open'){if(r.r==='fail'&&r.fix==='fixed')setRes(i,it.id,{r:'pass',fix:'verified'});}
+    else if(!r.r)setRes(i,it.id,{r:'pass'});
+  });
+  commit();
+};
+A.fullrun=function(){var i=I();i.full=true;i.log.push({t:Date.now(),e:'Full checklist re-run'});commit();};
+A.finish=function(){var i=I(),p=pending(i);if(p.length){ui.sheet={type:'missing',ids:p.map(function(x){return x.id;})};render();return;}doFinish(i);};
+A.missingpass=function(){
+  var i=I();
+  ui.sheet.ids.forEach(function(id){var r=i.res[id]||{};if(r.fix==='fixed')setRes(i,id,{r:'pass',fix:'verified'});else setRes(i,id,{r:'pass'});});
+  var left=pending(i);
+  if(left.length){ui.sheet={type:'missing',ids:left.map(function(x){return x.id;})};render();return;}
+  ui.sheet=null;doFinish(i);
+};
+/* rework, fix, override, complete */
+function startRework(i){if(i.status==='defects'){i.status='rework';i.log.push({t:Date.now(),e:'Rework started'});}}
+A.startrework=function(){startRework(I());commit();};
+A.fixed=function(el){var i=I(),o=i.res[el.dataset.i];if(o.fix==='fixed')o.fix='open';else{o.fix='fixed';startRework(i);}commit();};
+A.allfixed=function(){var i=I();fails(i).forEach(function(it){i.res[it.id].fix='fixed';});startRework(i);commit();};
+A.ready=function(){var i=I();i.status='reinspect';i.full=false;i.log.push({t:Date.now(),e:'Housekeeping reports fixed, ready for re-inspection'});commit();};
+A.fixall=function(){askComplete(I());};
+A.qfix=function(el){askComplete(insp(el.dataset.i));};
+A.approvenow=function(){var i=I();i.log.push({t:Date.now(),e:'No open defects left, approved by POC'});approve(i);};
+A.ovr=function(el){var i=I(),it=itemOf(i,el.dataset.i),r=i.res[it.id]||{};ui.sheet={type:'override',itemId:it.id,draft:{note:r.ovr||''}};render();};
+A.ovrchip=function(el){ui.sheet.draft.note=el.dataset.v;render();};
+A.saveovr=function(){
+  var i=I(),sh=ui.sheet,it=itemOf(i,sh.itemId),n=(sh.draft.note||'').trim();
+  setRes(i,it.id,{fix:'overridden',ovr:n||'Overridden by POC',ovrAt:Date.now()});
+  if(!i.res[it.id].failCount)i.res[it.id].failCount=1;
+  i.log.push({t:Date.now(),e:'Defect overridden: '+it.label+(n?' ('+n+')':'')});
+  ui.sheet=null;commit();
+};
+A.unovr=function(el){var i=I(),it=itemOf(i,el.dataset.i);setRes(i,it.id,{fix:'open'},['ovr','ovrAt']);i.log.push({t:Date.now(),e:'Override removed: '+it.label});commit();};
+A.reopen=function(){ui.sheet={type:'reopen',draft:{reason:''}};render();};
+A.doreopen=function(){
+  var i=I(),r=(ui.sheet.draft.reason||'').trim();
+  if(r.length<3){toast('Add a short reason first.');return;}
+  i.status='reinspect';i.full=true;i.approvedAt=null;i.log.push({t:Date.now(),e:'Reopened: '+r});ui.sheet=null;commit();
+};
+A.yes=function(){var f=ui.sheet&&ui.sheet.fn;ui.sheet=null;if(f)f();render();};
+/* settings actions */
+A.rarch=function(el){var x=roomInfo(el.dataset.i);x.room.active=x.room.active===false;commit();};
+A.addroom=function(el){ui.sheet={type:'room',bid:el.dataset.i,draft:{number:'',floor:''}};render();};
+A.saveroom=function(){
+  var sh=ui.sheet,d=sh.draft,b=blockOf(sh.bid),n=(d.number||'').trim();
+  if(!n){toast('Enter a room number.');return;}
+  if(b.rooms.some(function(r){return r.number===n;})){toast('That room already exists in this block.');return;}
+  var f=String(d.floor||'').trim();
+  b.rooms.push({id:b.id+':'+n,number:n,floor:f===''||isNaN(+f)?null:+f,catId:null,active:true,extra:[],off:[]});
+  ui.sheet=null;commit();
+};
+A.addblock=function(){ui.sheet={type:'block',draft:{name:''}};render();};
+A.saveblock=function(){var n=(ui.sheet.draft.name||'').trim();if(!n){toast('Enter a block name.');return;}state.blocks.push({id:'b'+uid(),name:n,extra:[],off:[],rooms:[]});ui.sheet=null;commit();};
+A.addcat=function(){state.categories.push({id:'c'+uid(),name:'New category',na:[],extra:[]});commit();};
+A.delcat=function(el){state.categories=state.categories.filter(function(c){return c.id!==el.dataset.i;});commit();};
+/* items: standard checklist, category, block and room all share one editor */
+function srcFor(cat){
+  if(cat==='tpl')return state.template;
+  if(cat.indexOf('room:')===0)return roomInfo(cat.slice(5)).room.extra;
+  if(cat.indexOf('block:')===0)return blockOf(cat.slice(6)).extra;
+  return state.categories.filter(function(c){return c.id===cat;})[0].extra;
+}
+function backSheet(){return ui.sheet&&ui.sheet.type==='ritems'?ui.sheet:null;}
+A.additem=function(el){ui.sheet={type:'item',cat:el.dataset.cat,id:null,back:backSheet(),draft:{label:'',section:'Room',type:'check',unit:'',required:true,active:true}};render();};
+A.edititem=function(el){
+  var cat=el.dataset.cat,t=srcFor(cat).filter(function(x){return x.id===el.dataset.i;})[0];
+  ui.sheet={type:'item',cat:cat,id:t.id,back:backSheet(),draft:{label:t.label,section:t.section,type:t.type,unit:t.unit||'',required:t.required!==false,active:t.active!==false}};render();
+};
+A.saveitem=function(){
+  var sh=ui.sheet,d=sh.draft;
+  if(!(d.label||'').trim()||!(d.section||'').trim()){toast('Label and section are needed.');return;}
+  var src=srcFor(sh.cat);
+  var o={label:d.label.trim(),section:d.section.trim(),type:d.type,required:!!d.required,active:!!d.active};
+  if(d.type==='count')o.unit=d.unit||'';
+  if(sh.id){var t=src.filter(function(x){return x.id===sh.id;})[0];Object.assign(t,o);if(d.type!=='count')delete t.unit;}
+  else{o.id=(sh.cat==='tpl'?'t':'x')+uid();src.push(o);}
+  resyncAll();ui.sheet=sh.back||null;commit();
+};
+A.delitem=function(){
+  var sh=ui.sheet;
+  ui.sheet={type:'confirm',back:sh.back,title:'Delete this item?',text:'Past inspections keep their own copy. For a standard item, switching it off is safer if you may need it again.',label:'Delete',fn:function(){
+    var arr=srcFor(sh.cat),k=arr.findIndex(function(x){return x.id===sh.id;});if(k>=0)arr.splice(k,1);
+    if(sh.cat==='tpl')state.categories.forEach(function(c){c.na=c.na.filter(function(v){return v!==sh.id;});});
+    resyncAll();ui.sheet=sh.back||null;save();}};
+  render();
+};
+A.ritems=function(el){ui.sheet={type:'ritems',scope:el.dataset.s,id:el.dataset.i};render();};
+A.rtog=function(el){
+  var sh=ui.sheet,tgt=sh.scope==='room'?roomInfo(sh.id).room:blockOf(sh.id),k=tgt.off.indexOf(el.dataset.t);
+  if(k>=0)tgt.off.splice(k,1);else tgt.off.push(el.dataset.t);
+  resyncAll();commit();
+};
+A.mv=function(el){
+  var id=el.dataset.i,d=+el.dataset.d,arr=state.template,k=arr.findIndex(function(x){return x.id===id;}),sec=arr[k].section,j=k+d;
+  while(j>=0&&j<arr.length&&arr[j].section!==sec)j+=d;
+  if(j<0||j>=arr.length)return;
+  var tmp=arr[k];arr[k]=arr[j];arr[j]=tmp;commit();
+};
+/* HK cart */
+A.kadd=function(){var el=document.getElementById('newcart'),n=(el&&el.value||'').trim();if(!n)return;state.cart.push({id:'k'+uid(),label:n,active:true});resyncAll();commit();};
+A.ktog=function(el){var k=state.cart.filter(function(x){return x.id===el.dataset.i;})[0];k.active=k.active===false;resyncAll();commit();};
+A.kdel=function(el){state.cart=state.cart.filter(function(x){return x.id!==el.dataset.i;});resyncAll();commit();};
+A.kmv=function(el){var a=state.cart,k=a.findIndex(function(x){return x.id===el.dataset.i;}),j=k+(+el.dataset.d);if(j<0||j>=a.length)return;var tmp=a[k];a[k]=a[j];a[j]=tmp;resyncAll();commit();};
+A.addstaff=function(){var el=document.getElementById('newstaff'),n=(el&&el.value||'').trim();if(!n)return;state.staff.push({id:'s'+uid(),name:n,active:true});commit();};
+A.sarch=function(el){var s=state.staff.filter(function(x){return x.id===el.dataset.i;})[0];s.active=s.active===false;commit();};
+A.ldemo=function(){loadDemo();};
+A.rmdemo=function(){
+  ui.sheet={type:'confirm',title:'Remove demo data?',text:'Only the inspections flagged as demo are removed. Real inspections are not touched.',label:'Remove',fn:function(){
+    state.inspections.filter(function(i){return i.demo;}).forEach(function(i){Object.keys(photos).forEach(function(k){if(k.indexOf(i.id+'|')===0)delete photos[k];});});
+    state.inspections=state.inspections.filter(function(i){return !i.demo;});save();savePhotos();toast('Demo data removed');}};
+  render();
+};
+A.erase=function(){ui.sheet={type:'confirm',title:'Erase all data?',text:'This deletes every inspection, photo and setting on this device. Export a backup first if you may need it.',label:'Erase everything',fn:function(){state=seedState();photos={};save();savePhotos();ui.view='settings';ui.sub=null;toast('All data erased');}};render();};
+A.doimport=function(){
+  var p=ui.pendingImport;
+  if(!p)return;
+  state=normalize(p.state);photos=p.photos||{};ui.pendingImport=null;ui.sheet=null;save();savePhotos();ui.view='board';render(true);toast('Backup imported');
+};
+function loadDemo(){
+  var nn=blockOf('nn');
+  if(!nn){toast('Demo needs the New Naina block.');return;}
+  var plan=[['204',[['Shower gel dispenser filled','Needs refilling']],60],['205',[['Soap dispenser filled','Refill'],['Towels changed','Change to fresh'],['Mirror clean','Cleaning needed']],45],['206',[['Bathroom window dusted','Dusting needed']],30],['208',[],20]];
+  plan.forEach(function(p){
+    var room=nn.rooms.filter(function(r){return r.number===p[0];})[0];
+    if(!room)return;
+    var i=newInsp(room.id,true,p[2]);
+    i.items.forEach(function(it){if(it.required!==false)i.res[it.id]={r:'pass'};});
+    p[1].forEach(function(d){var it=i.items.filter(function(x){return x.label===d[0];})[0];if(it)i.res[it.id]={r:'fail',note:d[1],sev:'normal',failCount:1,fix:'open'};});
+    var f=fails(i);i.firstPass=f.length===0;
+    if(f.length){i.status='defects';i.log.push({t:Date.now(),e:'Inspection finished: '+f.length+' defect'+(f.length===1?'':'s')});}
+    else{i.status='approved';i.approvedAt=Date.now()-5*6e4;i.log.push({t:i.approvedAt,e:'Approved, passed first time'});}
+  });
+  var r7=nn.rooms.filter(function(r){return r.number==='207';})[0];
+  if(r7)newInsp(r7.id,true,180,true);
+  save();ui.view='board';render(true);toast('Demo data loaded');
+}
+
+/* ---------- inputs ---------- */
+M.phone=function(el){state.settings.phone=el.value;save();};
+M.bname=function(el){var b=blockOf(el.dataset.i);if(b){b.name=el.value;save();}};
+M.cname=function(el){var c=state.categories.filter(function(x){return x.id===el.dataset.i;})[0];if(c){c.name=el.value;save();}};
+M.sname=function(el){var s=state.staff.filter(function(x){return x.id===el.dataset.i;})[0];if(s){s.name=el.value;save();}};
+M.kname=function(el){var k=state.cart.filter(function(x){return x.id===el.dataset.i;})[0];if(k){k.label=el.value;save();}};
+M.rurl=function(el){state.settings.reportUrl=el.value.trim();save();};
+M.rkey=function(el){state.settings.reportKey=el.value.trim();save();};
+M.shiftend=function(el){state.settings.shiftEnd=el.value;save();};
+M.guest=function(el){var i=I();if(i){i.guest=el.value;save();}};
+M.fnote=function(el){ui.sheet.draft.note=el.value;};
+M.watext=function(el){ui.sheet.text=el.value;};
+M.d=function(el){ui.sheet.draft[el.dataset.k]=el.value;};
+C.d=function(el){ui.sheet.draft[el.dataset.k]=el.type==='checkbox'?el.checked:el.value;if(el.dataset.k==='type')render();};
+C.reproom=function(el){ui.repRoom=el.value;render();};
+C.rcat=function(el){var x=roomInfo(el.dataset.i);x.room.catId=el.value||null;resyncAll();save();render();};
+C.bulkcat=function(el){
+  if(el.value==='__')return;
+  var b=blockOf(el.dataset.i);
+  b.rooms.forEach(function(r){r.catId=el.value||null;});resyncAll();commit();
+};
+C.catna=function(el){
+  var c=state.categories.filter(function(x){return x.id===el.dataset.i;})[0],t=el.dataset.t,k=c.na.indexOf(t);
+  if(!el.checked&&k<0)c.na.push(t);if(el.checked&&k>=0)c.na.splice(k,1);
+  resyncAll();save();var sm=el.closest('details').querySelector('summary');if(sm)sm.textContent='Standard items this category has ('+(state.template.length-c.na.length)+' of '+state.template.length+')';
+};
+C.photo=function(el){var f=el.files&&el.files[0];if(!f)return;readPhoto(f,function(u){if(ui.sheet&&ui.sheet.type==='fail'){ui.sheet.draft.photo=u;render();}});};
+C.import=function(el){
+  var f=el.files&&el.files[0];if(!f)return;
+  var fr=new FileReader();
+  fr.onload=function(){
+    try{
+      var d=JSON.parse(fr.result);
+      if(!d||d.app!=='room-checkout-log'||!d.state||!d.state.blocks)throw 0;
+      ui.pendingImport={state:d.state,photos:d.photos||{}};
+      ui.sheet={type:'importc',when:d.exportedAt||Date.now()};render();
+    }catch(e){toast('That file is not a Room Checkout Log backup.');}
+  };
+  fr.readAsText(f);
+};
+app.addEventListener('click',function(e){var el=e.target.closest('[data-a]');if(!el||el.disabled)return;var f=A[el.dataset.a];if(f){e.preventDefault();f(el,e);}});
+app.addEventListener('input',function(e){var el=e.target,m=el.dataset&&el.dataset.m;if(m&&M[m])M[m](el,e);});
+app.addEventListener('change',function(e){var el=e.target,m=el.dataset&&el.dataset.c;if(m&&C[m])C[m](el,e);});
+loadAll();
+render(true);
+})();
+</script><script>if("serviceWorker" in navigator){window.addEventListener("load",function(){navigator.serviceWorker.register("sw.js").catch(function(){});if(navigator.storage&&navigator.storage.persist){navigator.storage.persist().catch(function(){});}});}</script></body></html>
